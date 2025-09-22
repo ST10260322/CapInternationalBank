@@ -1,9 +1,12 @@
 import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
 import RecipientDetails from "./RecipientDetails";
 import AmountDetails from "./AmountDetails";
 import ConfirmPayment from "./ConfirmPayment";
 
 function PaymentFlow() {
+  const location = useLocation();
+  const { userId } = location.state || {}; 
   const [step, setStep] = useState(1);
   const [paymentData, setPaymentData] = useState({
     recipientName: "",
@@ -29,7 +32,7 @@ function PaymentFlow() {
     case 2:
       return <AmountDetails nextStep={nextStep} prevStep={prevStep} updateData={updateData} data={paymentData} />;
     case 3:
-      return <ConfirmPayment prevStep={prevStep} data={paymentData} />;
+      return <ConfirmPayment prevStep={prevStep} data={paymentData} userId={userId} />;
     default:
       return null;
   }

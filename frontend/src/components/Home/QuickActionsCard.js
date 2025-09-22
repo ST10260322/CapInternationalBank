@@ -1,20 +1,17 @@
 import React from "react";
-import { useNavigate } from "react-router-dom"; // import navigate
+import { useNavigate } from "react-router-dom";
 
-function QuickActionsCard() {
-  const navigate = useNavigate(); // get navigate function
+function QuickActionsCard({ userId }) { // accept userId as prop
+  const navigate = useNavigate();
 
   const handleMakePayment = () => {
-    navigate("/payment"); // go to payment flow page
+    navigate("/payment", { state: { userId } }); // pass userId to PaymentFlow
   };
 
   return (
     <div style={{ border: "1px solid gray", padding: "20px", width: "300px" }}>
       <h2>Quick Actions</h2>
-      <button 
-        style={{ display: "block", margin: "10px 0" }} 
-        onClick={handleMakePayment} // navigate when clicked
-      >
+      <button onClick={handleMakePayment} style={{ display: "block", margin: "10px 0" }}>
         Make International Payment
       </button>
       <button style={{ display: "block", margin: "10px 0" }}>
