@@ -1,14 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../api"; // ✅ use api instead of axios
 
-function ConfirmPayment({ prevStep, data, userId }) { // receive userId from parent
+function ConfirmPayment({ prevStep, data }) { // no need to pass userId
   const navigate = useNavigate();
 
   const handleConfirm = async () => {
     try {
-      await axios.post("https://localhost:3001/payments", {
-        userId,
+      await api.post("/payments", {
         recipientName: data.recipientName,
         bank: data.bank,
         accountNumber: data.accountNumber,

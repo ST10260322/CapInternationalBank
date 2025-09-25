@@ -3,6 +3,8 @@ import { useLocation } from "react-router-dom";
 import RecipientDetails from "./RecipientDetails";
 import AmountDetails from "./AmountDetails";
 import ConfirmPayment from "./ConfirmPayment";
+import api from "../../api";
+
 
 function PaymentFlow() {
   const location = useLocation();

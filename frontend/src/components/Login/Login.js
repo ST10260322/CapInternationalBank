@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Login.css"; // We'll create this CSS file
+import api from "../../api";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -12,7 +13,7 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("https://localhost:3001/login", { email, password });
+      const res = await api.post("/login", { email, password });
       setMessage(res.data.message + " (User ID: " + res.data.userId + ")");
 
       // Navigate to Home page with userId in state
