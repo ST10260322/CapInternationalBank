@@ -3,14 +3,16 @@ import https from "https";
 import express from "express";
 import cors from "cors";
 import bcrypt from "bcrypt";
-import db from "./database";
 import session from "express-session";
-import SQLiteStore from "connect-sqlite3";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import sanitizeHtml from "sanitize-html";
 
-const SQLiteStoreInstance = SQLiteStore(session);
+// MongoDB
+import "./database.js"; // MongoDB connection
+import User from "./models/User.js";
+import Payment from "./models/Payment.js";
+
 const app = express();
 
 // =====================
@@ -47,7 +49,6 @@ app.use(express.json());
 // =====================
 app.use(
   session({
-    store: new SQLiteStoreInstance({ db: "sessions.sqlite" }),
     secret: "super-secret-key", // change for production
     resave: false,
     saveUninitialized: false,
@@ -63,8 +64,8 @@ app.use(
 // Rate Limiting
 // =====================
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // max 100 requests per IP per window
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: "Too many requests from this IP, please try again later."
 });
 
@@ -99,11 +100,11 @@ app.post("/register", async (req, res) => {
   let { name, surname, idNumber, email, password } = req.body;
 
   // Sanitization
-  name = sanitizeHtml(name, { allowedTags: [], allowedAttributes: {} });
-  surname = sanitizeHtml(surname, { allowedTags: [], allowedAttributes: {} });
-  idNumber = idNumber.replace(/\D/g, ""); // digits only
-  email = sanitizeHtml(email, { allowedTags: [], allowedAttributes: {} });
-  password = sanitizeHtml(password, { allowedTags: [], allowedAttributes: {} });
+  name = sanitizeHtml(name);
+  surname = sanitizeHtml(surname);
+  idNumber = idNumber.replace(/\D/g, "");
+  email = sanitizeHtml(email);
+  password = sanitizeHtml(password);
 
   // Validation
   if (!name || !surname || !idNumber || !email || !password) {
@@ -116,12 +117,19 @@ app.post("/register", async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const query = `INSERT INTO users (name, surname, idNumber, email, password) VALUES (?, ?, ?, ?, ?)`;
-    db.run(query, [name, surname, idNumber, email, hashedPassword], function (err) {
-      if (err) return res.status(500).json({ message: "Error creating user", error: err.message });
-      res.status(201).json({ message: "User registered!", userId: this.lastID });
+    const newUser = await User.create({
+      name,
+      surname,
+      idNumber,
+      email,
+      password: hashedPassword
     });
+
+    res.status(201).json({ message: "User registered!", userId: newUser._id });
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
@@ -132,25 +140,25 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
   let { email, password } = req.body;
 
-  // Sanitization
-  email = sanitizeHtml(email, { allowedTags: [], allowedAttributes: {} });
-  password = sanitizeHtml(password, { allowedTags: [], allowedAttributes: {} });
+  email = sanitizeHtml(email);
+  password = sanitizeHtml(password);
 
   if (!email || !password || !validateInput(email, "email")) {
     return res.status(400).json({ message: "Invalid email or password format" });
   }
 
-  const query = `SELECT * FROM users WHERE email = ?`;
-  db.get(query, [email], async (err, user) => {
-    if (err) return res.status(500).json({ message: "Database error", error: err.message });
+  try {
+    const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid email or password" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid email or password" });
 
-    req.session.userId = user.id;
-    res.json({ message: "Login successful!", userId: user.id });
-  });
+    req.session.userId = user._id;
+    res.json({ message: "Login successful!", userId: user._id });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 });
 
 // ---------------------
@@ -164,19 +172,17 @@ function authMiddleware(req, res, next) {
 // ---------------------
 // Payment Route
 // ---------------------
-app.post("/payments", authMiddleware, (req, res) => {
+app.post("/payments", authMiddleware, async (req, res) => {
   let { recipientName, bank, accountNumber, recipientEmail, currency, amount, reference, swiftCode } = req.body;
   const userId = req.session.userId;
 
-  // Sanitization
-  recipientName = sanitizeHtml(recipientName, { allowedTags: [], allowedAttributes: {} });
-  bank = sanitizeHtml(bank, { allowedTags: [], allowedAttributes: {} });
+  recipientName = sanitizeHtml(recipientName);
+  bank = sanitizeHtml(bank);
   accountNumber = accountNumber.replace(/\D/g, "");
-  recipientEmail = sanitizeHtml(recipientEmail, { allowedTags: [], allowedAttributes: {} });
-  reference = sanitizeHtml(reference || "", { allowedTags: [], allowedAttributes: {} });
-  swiftCode = sanitizeHtml(swiftCode || "", { allowedTags: [], allowedAttributes: {} });
+  recipientEmail = sanitizeHtml(recipientEmail);
+  reference = sanitizeHtml(reference || "");
+  swiftCode = sanitizeHtml(swiftCode || "");
 
-  // Required fields
   const missing = [];
   if (!recipientName) missing.push("recipientName");
   if (!bank) missing.push("bank");
@@ -186,18 +192,29 @@ app.post("/payments", authMiddleware, (req, res) => {
   if (!amount) missing.push("amount");
   if (missing.length > 0) return res.status(400).json({ message: `Missing required fields: ${missing.join(", ")}` });
 
-  // Validation
   if (!validateInput(recipientName, "name") || !validateInput(bank, "name")) return res.status(400).json({ message: "Invalid recipient or bank name" });
   if (!validateInput(accountNumber, "accountNumber")) return res.status(400).json({ message: "Invalid account number" });
   if (!validateInput(recipientEmail, "email")) return res.status(400).json({ message: "Invalid recipient email" });
   if (!validateInput(currency, "currency")) return res.status(400).json({ message: "Unsupported currency" });
   if (isNaN(amount) || Number(amount) <= 0) return res.status(400).json({ message: "Invalid amount" });
 
-  const query = `INSERT INTO payments (userId, recipientName, bank, accountNumber, recipientEmail, currency, amount, reference, swiftCode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-  db.run(query, [userId, recipientName, bank, accountNumber, recipientEmail, currency, amount, reference, swiftCode], function (err) {
-    if (err) return res.status(500).json({ message: "Error saving payment", error: err.message });
-    res.status(201).json({ message: "Payment saved!", paymentId: this.lastID });
-  });
+  try {
+    const newPayment = await Payment.create({
+      userId,
+      recipientName,
+      bank,
+      accountNumber,
+      recipientEmail,
+      currency,
+      amount,
+      reference,
+      swiftCode
+    });
+
+    res.status(201).json({ message: "Payment saved!", paymentId: newPayment._id });
+  } catch (err) {
+    res.status(500).json({ message: "Error saving payment", error: err.message });
+  }
 });
 
 // =====================
