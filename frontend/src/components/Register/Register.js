@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import "./Register.css"; // Create this CSS file
+import "./Register.css";
 import api from "../../api";
+import { calculatePasswordStrength } from "../../utils/passwordStrength";
 
 function Register() {
   const [name, setName] = useState("");
@@ -10,8 +11,15 @@ function Register() {
   const [idNumber, setIdNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordStrength, setPasswordStrength] = useState(null);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    setPasswordStrength(calculatePasswordStrength(newPassword));
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -90,10 +98,35 @@ function Register() {
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               required
               className="form-input"
             />
+            
+            {/* Password Strength Meter */}
+            {passwordStrength && password && (
+              <div className="password-strength">
+                <div className="strength-bar-container">
+                  <div 
+                    className="strength-bar" 
+                    style={{ 
+                      width: `${passwordStrength.percentage}%`,
+                      backgroundColor: passwordStrength.color 
+                    }}
+                  ></div>
+                </div>
+                <p className="strength-label" style={{ color: passwordStrength.color }}>
+                  Password Strength: <strong>{passwordStrength.label}</strong>
+                </p>
+                {passwordStrength.feedback.length > 0 && (
+                  <ul className="strength-feedback">
+                    {passwordStrength.feedback.map((item, index) => (
+                      <li key={index}>{item}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
           
           <button type="submit" className="register-button">Register</button>

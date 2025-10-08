@@ -156,4 +156,52 @@
     .register-button {
       padding: 12px;
     }
+
+    /* Password Strength Meter Styles */
+.password-strength {
+  margin-top: 10px;
+  text-align: left;
+}
+
+.strength-bar-container {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.strength-bar {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+  border-radius: 4px;
+}
+
+.strength-label {
+  font-size: 14px;
+  margin: 5px 0;
+  font-weight: 500;
+}
+
+.strength-feedback {
+  list-style: none;
+  padding: 0;
+  margin: 5px 0 0 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.strength-feedback li {
+  padding: 3px 0;
+  line-height: 1.4;
+}
+
+.strength-feedback li:before {
+  content: "• ";
+  color: #d73a49;
+  font-weight: bold;
+  margin-right: 5px;
+}
+
   }
