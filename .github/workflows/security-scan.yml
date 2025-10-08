@@ -20,18 +20,21 @@ jobs:
     
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: ${{ matrix.directory }}/package-lock.json
       
       - name: Install Dependencies
         working-directory: ${{ matrix.directory }}
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
       
       - name: Run npm audit
         working-directory: ${{ matrix.directory }}
@@ -55,7 +58,7 @@ jobs:
           fi
       
       - name: Upload Audit Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-audit-report-${{ matrix.directory }}
           path: ${{ matrix.directory }}/audit-report-${{ matrix.directory }}.json
@@ -67,10 +70,10 @@ jobs:
     
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
       
@@ -92,7 +95,7 @@ jobs:
     
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Check for Hardcoded Secrets
         run: |
@@ -118,7 +121,7 @@ jobs:
     
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Verify Security Middleware
         run: |
@@ -165,7 +168,7 @@ jobs:
     
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Generate Report Summary
         run: |
@@ -183,7 +186,7 @@ jobs:
           echo "All security checks completed successfully! 🎉" >> security-report.md
       
       - name: Upload Security Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-report
           path: security-report.md
