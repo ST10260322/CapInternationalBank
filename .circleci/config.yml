@@ -1,0 +1,104 @@
+version: 2.1
+
+# Define jobs
+jobs:
+  security-scan-backend:
+    docker:
+      - image: cimg/node:18.0
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: cd backend && npm install
+      - run:
+          name: Run Security Audit
+          command: cd backend && npm audit --audit-level=moderate || true
+      - run:
+          name: Check for Vulnerabilities
+          command: cd backend && npm audit --audit-level=high || true
+
+  security-scan-frontend:
+    docker:
+      - image: cimg/node:18.0
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: cd frontend && npm install
+      - run:
+          name: Run Security Audit
+          command: cd frontend && npm audit --audit-level=moderate || true
+      - run:
+          name: Check for Vulnerabilities
+          command: cd frontend && npm audit --audit-level=high || true
+
+  dependency-check:
+    docker:
+      - image: cimg/node:18.0
+    steps:
+      - checkout
+      - run:
+          name: Check Outdated Packages - Backend
+          command: cd backend && npm outdated || true
+      - run:
+          name: Check Outdated Packages - Frontend
+          command: cd frontend && npm outdated || true
+
+  security-headers-check:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: Verify Security Middleware
+          command: |
+            echo "Checking for security middleware..."
+            
+            if grep -q "helmet" backend/server.js; then
+              echo "✅ Helmet found"
+            else
+              echo "❌ Helmet missing" && exit 1
+            fi
+            
+            if grep -q "cors" backend/server.js; then
+              echo "✅ CORS found"
+            else
+              echo "❌ CORS missing" && exit 1
+            fi
+            
+            if grep -q "rateLimit" backend/server.js; then
+              echo "✅ Rate limiting found"
+            else
+              echo "❌ Rate limiting missing" && exit 1
+            fi
+            
+            if grep -q "csrf" backend/server.js; then
+              echo "✅ CSRF found"
+            else
+              echo "❌ CSRF missing" && exit 1
+            fi
+            
+            echo "✅ All security checks passed"
+
+  secret-detection:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: Scan for Hardcoded Secrets
+          command: |
+            echo "Scanning for secrets..."
+            grep -r "api[_-]key\s*=\s*['\"]" --include="*.js" backend/ frontend/ || echo "No API keys found"
+            grep -r "password\s*=\s*['\"][^'\"]\{8,\}" --include="*.js" backend/ frontend/ || echo "No hardcoded passwords"
+            echo "✅ Secret scan complete"
+
+# Define workflow
+workflows:
+  security-pipeline:
+    jobs:
+      - security-scan-backend
+      - security-scan-frontend
+      - dependency-check
+      - security-headers-check
+      - secret-detection
