@@ -9,6 +9,8 @@ import rateLimit from "express-rate-limit";
 import sanitizeHtml from "sanitize-html";
 import validator from "validator";
 import csrf from "csurf";
+import cookieParser from "cookie-parser";
+import crypto from 'crypto';
 
 
 // MongoDB
@@ -18,6 +20,42 @@ import Payment from "./models/Payment.js";
 
 const app = express();
 
+// Minimal middleware needed for /csrf-token endpoint
+app.use(cookieParser());
+app.use(cors({
+  origin: "https://localhost:3000",
+  credentials: true
+}));
+
+
+app.use((req, res, next) => {
+  console.log(`\n[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
+  next();
+});
+
+
+// =====================
+// CSRF Token Endpoint
+// =====================
+app.get("/csrf-token", (req, res) => {
+  try {
+    const token = crypto.randomBytes(32).toString('hex');
+    res.cookie('_csrf', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',  // Change back to 'none' for cross-origin
+      path: '/',
+      domain: 'localhost'  // Explicitly set domain
+    });
+    console.log('[CSRF Token] Token generated and cookie set:', token);
+    res.json({ csrfToken: token });
+  } catch (error) {
+    console.error('[CSRF Token] Error:', error);
+    res.status(500).json({ error: 'Failed to generate token' });
+  }
+});
 
 
 
@@ -47,17 +85,18 @@ app.use(
   })
 );
 
-// CORS setup
-app.use(
-  cors({
-    origin: "https://localhost:3000",
-    credentials: true
-  })
-);
+// // CORS setup
+// app.use(
+//   cors({
+//     origin: "https://localhost:3000",
+//     credentials: true
+//   })
+// );
 
 // Limit request body size to prevent DoS attacks
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
 
 
 
@@ -114,39 +153,45 @@ app.use(
 );
 
 // =====================
-// CSRF Protection
+// CSRF Protection (Fixed Configuration)
 // =====================
 const csrfProtection = csrf({ 
   cookie: {
-    secure: true,
+    key: '_csrf',
+    path: '/',
     httpOnly: true,
+    secure: true,
     sameSite: 'strict'
-  },
-  // Accept CSRF token from header (for API requests)
-  value: (req) => {
-    return req.headers['x-csrf-token'] || req.body._csrf || req.query._csrf;
   }
 });
 
-// Apply CSRF protection to all routes except GET requests to /csrf-token
-app.use((req, res, next) => {
-  // Skip CSRF for token endpoint and safe methods
-  if (req.path === '/csrf-token' || req.path === '/' || req.path === '/ssl-info') {
-    return next();
-  }
-  csrfProtection(req, res, next);
-});
 
-// CSRF error handler
-app.use((err, req, res, next) => {
-  if (err.code === 'EBADCSRFTOKEN') {
-    return res.status(403).json({ 
-      message: 'Invalid CSRF token. Request rejected for security.',
-      error: 'CSRF_VALIDATION_FAILED'
-    });
-  }
-  next(err);
-});
+// Apply CSRF protection selectively
+// app.use((req, res, next) => {
+//   console.log(`[CSRF Middleware] ${req.method} ${req.path}`);
+//   console.log('[CSRF Middleware] Cookies:', req.cookies);
+//   console.log('[CSRF Middleware] Headers:', req.headers);
+  
+//   const skipPaths = ['/', '/ssl-info', '/csrf-token'];
+//   const safeMethods = ['HEAD', 'OPTIONS'];
+  
+//   if (skipPaths.includes(req.path) || safeMethods.includes(req.method)) {
+//     console.log('[CSRF Middleware] Skipping CSRF protection');
+//     return next();
+//   }
+  
+//   console.log('[CSRF Middleware] Applying CSRF protection');
+//   console.log('[CSRF Middleware] CSRF Token from header:', req.headers['x-csrf-token']);
+//   console.log('[CSRF Middleware] CSRF Cookie:', req.cookies._csrf);
+  
+//   csrfProtection(req, res, next);
+// });
+
+
+
+
+
+
 
 
 
@@ -278,21 +323,28 @@ function validateReference(reference) {
 // NoSQL Injection Middleware
 // =====================
 const noSQLInjectionMiddleware = (req, res, next) => {
+  console.log('[NoSQL Middleware] Checking request...');
   try {
-    if (req.body) {
+    // Only sanitize body - query and params are handled differently
+    if (req.body && Object.keys(req.body).length > 0) {
+      console.log('[NoSQL Middleware] Original body:', req.body);
       req.body = sanitizeRequestBody(req.body);
+      console.log('[NoSQL Middleware] Sanitized body:', req.body);
     }
     
-    if (req.query) {
-      req.query = sanitizeRequestBody(req.query);
+    // For query and params, just validate without reassigning
+    if (req.query && Object.keys(req.query).length > 0) {
+      validateQueryOrParams(req.query, 'query');
     }
     
-    if (req.params) {
-      req.params = sanitizeRequestBody(req.params);
+    if (req.params && Object.keys(req.params).length > 0) {
+      validateQueryOrParams(req.params, 'params');
     }
     
+    console.log('[NoSQL Middleware] ✅ Passed');
     next();
   } catch (error) {
+    console.error('[NoSQL Middleware] ❌ ERROR:', error.message);
     return res.status(400).json({ 
       message: "Invalid request format", 
       error: error.message 
@@ -369,6 +421,27 @@ function sanitizeRequestBody(body) {
 }
 
 
+/**
+ * Validates query or params without modifying them
+ */
+function validateQueryOrParams(obj, type) {
+  if (typeof obj !== 'object' || obj === null) {
+    return;
+  }
+
+  for (const [key, value] of Object.entries(obj)) {
+    // Check for MongoDB operators
+    if (key.startsWith('$')) {
+      throw new Error(`Invalid ${type}: Operators not allowed`);
+    }
+    
+    // Check nested objects
+    if (typeof value === 'object' && value !== null) {
+      preventNoSQLInjection(value, key);
+    }
+  }
+}
+
 
 
 
@@ -379,30 +452,32 @@ function sanitizeRequestBody(body) {
 // Request Size Validation Middleware
 // =====================
 const validateRequestSize = (req, res, next) => {
-  // Check if request body exists
+  console.log('[Request Size Validator] Checking...');
+  
   if (!req.body || Object.keys(req.body).length === 0) {
+    console.log('[Request Size Validator] ✅ No body or empty body');
     return next();
   }
   
-  // Maximum allowed fields in request
   const MAX_FIELDS = 20;
   
-  // Check number of fields
   if (Object.keys(req.body).length > MAX_FIELDS) {
+    console.log('[Request Size Validator] ❌ Too many fields');
     return res.status(400).json({ 
       message: "Too many fields in request body" 
     });
   }
   
-  // Check each field length
   for (const [key, value] of Object.entries(req.body)) {
     if (typeof value === 'string' && value.length > 10000) {
+      console.log(`[Request Size Validator] ❌ Field '${key}' too long`);
       return res.status(400).json({ 
         message: `Field '${key}' exceeds maximum length of 10000 characters` 
       });
     }
   }
   
+  console.log('[Request Size Validator] ✅ Passed');
   next();
 };
 
@@ -474,12 +549,9 @@ app.get("/ssl-info", (req, res) => {
 // =====================
 app.get("/", (req, res) => res.send("Backend is running!"));
 
-// =====================
-// CSRF Token Endpoint
-// =====================
-app.get("/csrf-token", (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
-});
+
+
+
 
 
 
@@ -489,6 +561,25 @@ app.get("/csrf-token", (req, res) => {
 // Register Route (Enhanced with Length Limits)
 // ---------------------
 app.post("/register", async (req, res) => {
+  console.log('[Register] Received request');
+  
+  // Manual CSRF validation
+  const csrfTokenFromHeader = req.headers['x-csrf-token'];
+  const csrfTokenFromCookie = req.cookies._csrf;
+  
+  console.log('[Register] CSRF Token from header:', csrfTokenFromHeader);
+  console.log('[Register] CSRF Token from cookie:', csrfTokenFromCookie);
+  
+  if (!csrfTokenFromHeader || !csrfTokenFromCookie || csrfTokenFromHeader !== csrfTokenFromCookie) {
+    console.log('[Register] CSRF validation failed');
+    return res.status(403).json({ message: 'Invalid CSRF token' });
+  }
+  
+  console.log('[Register] CSRF validation passed');
+  console.log('[Register] Headers:', req.headers);
+  console.log('[Register] Cookies:', req.cookies);
+
+
   let { name, surname, idNumber, email, password } = req.body;
 
   // Type checking - ensure all inputs are strings
@@ -727,7 +818,16 @@ app.post("/payments", authMiddleware, async (req, res) => {
 
 
 
-
+// // CSRF error handler
+// app.use((err, req, res, next) => {
+//   if (err.code === 'EBADCSRFTOKEN') {
+//     return res.status(403).json({ 
+//       message: 'Invalid CSRF token. Request rejected for security.',
+//       error: 'CSRF_VALIDATION_FAILED'
+//     });
+//   }
+//   next(err);
+// });
 
 
 
