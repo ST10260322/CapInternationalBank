@@ -1,0 +1,197 @@
+.employee-login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+    position: relative;
+    padding: 20px;
+  }
+  
+  /* Back Button */
+  .back-button {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+  }
+  
+  .back-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-5px);
+  }
+  
+  /* Employee Login Card */
+  .employee-login-card {
+    background: white;
+    border-radius: 20px;
+    padding: 50px 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 450px;
+    width: 100%;
+    animation: slideUp 0.5s ease;
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Employee Header */
+  .employee-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  
+  .employee-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, #1976D2, #1565C0);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(25, 118, 210, 0.3);
+  }
+  
+  .employee-title {
+    margin: 0 0 10px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1976D2;
+  }
+  
+  .employee-subtitle {
+    margin: 0;
+    font-size: 16px;
+    color: #666;
+  }
+  
+  /* Form Styles */
+  .employee-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+  
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .input-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .form-input {
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+  }
+  
+  .form-input:focus {
+    outline: none;
+    border-color: #1976D2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  }
+  
+  .employee-login-button {
+    padding: 16px;
+    background: linear-gradient(135deg, #1976D2, #1565C0);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+  }
+  
+  .employee-login-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(25, 118, 210, 0.4);
+  }
+  
+  .employee-login-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  /* Message Styles */
+  .message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+  }
+  
+  .message.success {
+    background: #E8F5E9;
+    color: #2E7D32;
+    border-left: 4px solid #4CAF50;
+  }
+  
+  .message.error {
+    background: #FFEBEE;
+    color: #C62828;
+    border-left: 4px solid #F44336;
+  }
+  
+  /* Employee Footer */
+  .employee-footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+  }
+  
+  .employee-footer p {
+    margin: 0;
+    font-size: 13px;
+    color: #999;
+    font-style: italic;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .back-button {
+      top: 20px;
+      left: 20px;
+      font-size: 13px;
+      padding: 8px 16px;
+    }
+    
+    .employee-login-card {
+      padding: 40px 30px;
+    }
+    
+    .employee-title {
+      font-size: 24px;
+    }
+  }

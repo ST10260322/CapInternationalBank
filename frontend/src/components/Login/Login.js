@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import "./Login.css";
 import api from "../../api";
 
@@ -8,7 +7,6 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [isEmployeeLogin, setIsEmployeeLogin] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -27,17 +25,13 @@ function Login() {
 
   return (
     <div className="login-container">
-      <div className="employee-toggle">
-        <span>Employee Login</span>
-        <label className="toggle-switch">
-          <input
-            type="checkbox"
-            checked={isEmployeeLogin}
-            onChange={() => setIsEmployeeLogin(!isEmployeeLogin)}
-          />
-          <span className="toggle-slider"></span>
-        </label>
-      </div>
+      {/* Employee Login Button - Top Right */}
+      <Link to="/employee/login" className="employee-access-btn">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M10 2L2 7V13C2 16.866 5.817 18.586 10 19C14.183 18.586 18 16.866 18 13V7L10 2Z"/>
+        </svg>
+        Employee Access
+      </Link>
 
       <div className="login-card">
         <div className="bank-icon">

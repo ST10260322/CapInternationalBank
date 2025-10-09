@@ -11,6 +11,7 @@ import validator from "validator";
 import csrf from "csurf";
 import cookieParser from "cookie-parser";
 import crypto from 'crypto';
+import { employeeAuthMiddleware } from "./middleware/employeeAuth.js";
 
 
 // MongoDB
@@ -815,6 +816,414 @@ app.post("/payments", authMiddleware, async (req, res) => {
   }
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+// ---------------------
+// Employee Login Route
+// ---------------------
+app.post("/employee/login", async (req, res) => {
+  let { email, password } = req.body;
+
+  // Type checking
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ message: "Invalid input format" });
+  }
+
+  email = sanitizeHtml(email.trim().toLowerCase());
+  password = sanitizeHtml(password);
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+  
+  if (!validateEmail(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
+  try {
+    const user = await User.findOne({ 
+      email: { $eq: email },
+      isEmployee: true  // Only allow employee accounts
+    });
+    
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials or not an employee account" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    req.session.userId = user._id;
+    req.session.isEmployee = true;
+    
+    res.json({ 
+      message: "Employee login successful!", 
+      userId: user._id,
+      isEmployee: true,
+      employeeId: user.employeeId,
+      name: user.name,
+      department: user.department
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// ---------------------
+// Get Employee Dashboard Stats
+// ---------------------
+app.get("/employee/stats", employeeAuthMiddleware, async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments({ isEmployee: false });
+    const totalEmployees = await User.countDocuments({ isEmployee: true });
+    
+    const totalTransactions = await Payment.countDocuments();
+    const pendingTransactions = await Payment.countDocuments({ status: 'pending' });
+    const approvedTransactions = await Payment.countDocuments({ status: 'approved' });
+    const rejectedTransactions = await Payment.countDocuments({ status: 'rejected' });
+    
+    // Calculate total transaction value
+    const transactionStats = await Payment.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+          avgAmount: { $avg: "$amount" }
+        }
+      }
+    ]);
+    
+    // Get recent activity (last 5 transactions)
+    const recentActivity = await Payment.find()
+      .populate('userId', 'name surname email')
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    res.json({
+      users: {
+        total: totalUsers,
+        employees: totalEmployees
+      },
+      transactions: {
+        total: totalTransactions,
+        pending: pendingTransactions,
+        approved: approvedTransactions,
+        rejected: rejectedTransactions,
+        totalAmount: transactionStats[0]?.totalAmount || 0,
+        avgAmount: transactionStats[0]?.avgAmount || 0
+      },
+      recentActivity
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching stats", error: err.message });
+  }
+});
+
+// ---------------------
+// Get All Users (with pagination and search)
+// ---------------------
+app.get("/employee/users", employeeAuthMiddleware, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query;
+    
+    const query = { isEmployee: false };
+    
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { surname: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { idNumber: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const users = await User.find(query)
+      .select('-password')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+    
+    const count = await User.countDocuments(query);
+    
+    res.json({
+      users,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      totalUsers: count
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching users", error: err.message });
+  }
+});
+
+// ---------------------
+// Get User Details with Transaction History
+// ---------------------
+app.get("/employee/users/:userId", employeeAuthMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    const transactions = await Payment.find({ userId })
+      .sort({ createdAt: -1 });
+    
+    const transactionStats = await Payment.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(userId) } },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+          totalTransactions: { $sum: 1 },
+          pendingCount: {
+            $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] }
+          },
+          approvedCount: {
+            $sum: { $cond: [{ $eq: ["$status", "approved"] }, 1, 0] }
+          },
+          rejectedCount: {
+            $sum: { $cond: [{ $eq: ["$status", "rejected"] }, 1, 0] }
+          }
+        }
+      }
+    ]);
+    
+    res.json({
+      user,
+      transactions,
+      stats: transactionStats[0] || {
+        totalAmount: 0,
+        totalTransactions: 0,
+        pendingCount: 0,
+        approvedCount: 0,
+        rejectedCount: 0
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching user details", error: err.message });
+  }
+});
+
+// ---------------------
+// Get All Transactions (with filtering)
+// ---------------------
+app.get("/employee/transactions", employeeAuthMiddleware, async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 20, 
+      status = 'all',
+      search = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+    
+    const query = {};
+    
+    // Filter by status
+    if (status !== 'all') {
+      query.status = status;
+    }
+    
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { recipientName: { $regex: search, $options: 'i' } },
+        { bank: { $regex: search, $options: 'i' } },
+        { accountNumber: { $regex: search, $options: 'i' } },
+        { recipientEmail: { $regex: search, $options: 'i' } },
+        { reference: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    
+    const transactions = await Payment.find(query)
+      .populate('userId', 'name surname email')
+      .populate('reviewedBy', 'name surname employeeId')
+      .sort(sortOptions)
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+    
+    const count = await Payment.countDocuments(query);
+    
+    res.json({
+      transactions,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      totalTransactions: count
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching transactions", error: err.message });
+  }
+});
+
+// ---------------------
+// Get Single Transaction Details
+// ---------------------
+app.get("/employee/transactions/:transactionId", employeeAuthMiddleware, async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+    
+    const transaction = await Payment.findById(transactionId)
+      .populate('userId', 'name surname email idNumber')
+      .populate('reviewedBy', 'name surname employeeId department');
+    
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+    
+    res.json({ transaction });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching transaction", error: err.message });
+  }
+});
+
+// ---------------------
+// Approve Transaction
+// ---------------------
+app.post("/employee/transactions/:transactionId/approve", employeeAuthMiddleware, async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+    let { comment } = req.body;
+    
+    // Sanitize comment
+    comment = comment ? sanitizeHtml(comment.trim()) : '';
+    
+    const transaction = await Payment.findById(transactionId);
+    
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+    
+    if (transaction.status !== 'pending') {
+      return res.status(400).json({ 
+        message: `Transaction already ${transaction.status}` 
+      });
+    }
+    
+    transaction.status = 'approved';
+    transaction.reviewedBy = req.employee._id;
+    transaction.reviewedAt = new Date();
+    transaction.reviewComment = comment;
+    
+    await transaction.save();
+    
+    // Populate for response
+    await transaction.populate('userId', 'name surname email');
+    await transaction.populate('reviewedBy', 'name surname employeeId');
+    
+    res.json({ 
+      message: "Transaction approved successfully", 
+      transaction 
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error approving transaction", error: err.message });
+  }
+});
+
+// ---------------------
+// Reject Transaction
+// ---------------------
+app.post("/employee/transactions/:transactionId/reject", employeeAuthMiddleware, async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+    let { comment } = req.body;
+    
+    // Sanitize comment
+    comment = comment ? sanitizeHtml(comment.trim()) : '';
+    
+    if (!comment) {
+      return res.status(400).json({ 
+        message: "Rejection reason is required" 
+      });
+    }
+    
+    const transaction = await Payment.findById(transactionId);
+    
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+    
+    if (transaction.status !== 'pending') {
+      return res.status(400).json({ 
+        message: `Transaction already ${transaction.status}` 
+      });
+    }
+    
+    transaction.status = 'rejected';
+    transaction.reviewedBy = req.employee._id;
+    transaction.reviewedAt = new Date();
+    transaction.reviewComment = comment;
+    
+    await transaction.save();
+    
+    // Populate for response
+    await transaction.populate('userId', 'name surname email');
+    await transaction.populate('reviewedBy', 'name surname employeeId');
+    
+    res.json({ 
+      message: "Transaction rejected successfully", 
+      transaction 
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error rejecting transaction", error: err.message });
+  }
+});
+
+// ---------------------
+// Get Employee Profile
+// ---------------------
+app.get("/employee/profile", employeeAuthMiddleware, async (req, res) => {
+  try {
+    const employee = await User.findById(req.employee._id).select('-password');
+    
+    // Get review statistics
+    const reviewStats = await Payment.aggregate([
+      { $match: { reviewedBy: mongoose.Types.ObjectId(req.employee._id) } },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    const stats = {
+      approved: 0,
+      rejected: 0
+    };
+    
+    reviewStats.forEach(stat => {
+      if (stat._id === 'approved') stats.approved = stat.count;
+      if (stat._id === 'rejected') stats.rejected = stat.count;
+    });
+    
+    res.json({
+      employee,
+      reviewStats: stats
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching profile", error: err.message });
+  }
+});
 
 
 

@@ -10,6 +10,20 @@ const paymentSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   reference: { type: String },
   swiftCode: { type: String },
+  
+  // NEW FIELDS FOR EMPLOYEE APPROVAL SYSTEM
+  status: { 
+    type: String, 
+    enum: ['pending', 'approved', 'rejected'], 
+    default: 'pending' 
+  },
+  reviewedBy: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "User" 
+  },
+  reviewedAt: { type: Date },
+  reviewComment: { type: String },
+  
   createdAt: { type: Date, default: Date.now }
 });
 
