@@ -1,0 +1,148 @@
+/* RecipientDetails.css */
+
+/* Container for the entire form */
+.recipient-details-container {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #1a0a0a 0%, #2d1414 50%, #1a0a0a 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  }
+  
+  /* Bank Header */
+  .bank-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 60px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .bank-icon {
+    width: 24px;
+    height: 24px;
+    background: white;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Form Container */
+  .form-wrapper {
+    background: rgba(40, 40, 40, 0.6);
+    border-radius: 16px;
+    padding: 50px 60px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+  
+  /* Title */
+  .form-wrapper h2 {
+    color: white;
+    font-size: 32px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 40px;
+    letter-spacing: -0.5px;
+  }
+  
+  /* Form Styles */
+  .recipient-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  /* Form Group */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .form-group label {
+    color: #e0e0e0;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  
+  /* Input Fields */
+  .form-group input {
+    background: rgba(60, 60, 60, 0.8);
+    border: 1px solid rgba(80, 80, 80, 0.5);
+    border-radius: 8px;
+    padding: 14px 18px;
+    color: #b0b0b0;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.3s ease;
+    width: 100%;
+  }
+  
+  .form-group input:focus {
+    background: rgba(70, 70, 70, 0.9);
+    border-color: rgba(120, 120, 120, 0.8);
+    color: white;
+  }
+  
+  .form-group input::placeholder {
+    color: #808080;
+  }
+  
+  /* Next Button */
+  .next-button {
+    background: linear-gradient(135deg, #c44545 0%, #a53535 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: all 0.3s ease;
+    align-self: center;
+    min-width: 140px;
+  }
+  
+  .next-button:hover {
+    background: linear-gradient(135deg, #d45555 0%, #b54545 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(196, 69, 69, 0.4);
+  }
+  
+  .next-button:active {
+    transform: translateY(0);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .form-wrapper {
+      padding: 40px 30px;
+    }
+  
+    .form-wrapper h2 {
+      font-size: 28px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .recipient-details-container {
+      padding: 20px 15px;
+    }
+  
+    .form-wrapper {
+      padding: 30px 20px;
+    }
+  
+    .form-wrapper h2 {
+      font-size: 24px;
+    }
+  }

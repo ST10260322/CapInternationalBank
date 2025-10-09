@@ -1,8 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api"; // ✅ use api instead of axios
+import api from "../../api";
+import "./ConfirmPayment.css";
 
-function ConfirmPayment({ prevStep, data }) { // no need to pass userId
+function ConfirmPayment({ prevStep, data }) {
   const navigate = useNavigate();
 
   const handleConfirm = async () => {
@@ -24,19 +25,81 @@ function ConfirmPayment({ prevStep, data }) { // no need to pass userId
     }
   };
 
+  const handleStartOver = () => {
+    if (window.confirm("Are you sure you want to start over? All entered data will be lost.")) {
+      // You can navigate to the first step or home page
+      navigate("/payment"); // Adjust this route as needed
+    }
+  };
+
   return (
-    <div>
-      <h2>Confirm Payment</h2>
-      <p><b>Name:</b> {data.recipientName}</p>
-      <p><b>Bank:</b> {data.bank}</p>
-      <p><b>Account Number:</b> {data.accountNumber}</p>
-      <p><b>Email:</b> {data.email}</p>
-      <p><b>Currency:</b> {data.currency}</p>
-      <p><b>Amount:</b> {data.amount}</p>
-      <p><b>Reference:</b> {data.reference}</p>
-      <p><b>SWIFT Code:</b> {data.swiftCode}</p>
-      <button onClick={prevStep}>Back</button>
-      <button onClick={handleConfirm}>Confirm</button>
+    <div className="confirm-payment-container">
+      {/* Bank Header */}
+      <div className="bank-header">
+        <div className="bank-icon">🏛️</div>
+        <span>CAP International Bank</span>
+      </div>
+
+      {/* Confirmation Container */}
+      <div className="confirmation-wrapper">
+        <h2>Payment Confirmation</h2>
+        
+        <div className="details-grid">
+          {/* Left Column */}
+          <div className="detail-item">
+            <span className="detail-label">Recipient name</span>
+            <div className="detail-value">{data.recipientName}</div>
+          </div>
+
+          <div className="detail-item">
+            <span className="detail-label">Currency</span>
+            <div className="detail-value">{data.currency}</div>
+          </div>
+
+          <div className="detail-item">
+            <span className="detail-label">Recipient Bank</span>
+            <div className="detail-value">{data.bank}</div>
+          </div>
+
+          <div className="detail-item">
+            <span className="detail-label">Amount</span>
+            <div className="detail-value">{data.amount}</div>
+          </div>
+
+          <div className="detail-item">
+            <span className="detail-label">Recipient Account Number</span>
+            <div className="detail-value">{data.accountNumber}</div>
+          </div>
+
+          <div className="detail-item">
+            <span className="detail-label">Reference</span>
+            <div className="detail-value">{data.reference}</div>
+          </div>
+
+          <div className="detail-item">
+            <span className="detail-label">Recipient Email</span>
+            <div className="detail-value">{data.email}</div>
+          </div>
+
+          <div className="detail-item">
+            <span className="detail-label">SWIFT Code</span>
+            <div className="detail-value swift-code">••••••••••</div>
+          </div>
+        </div>
+
+        <div className="button-container">
+          <button className="start-over-button" onClick={handleStartOver}>
+            Start Over
+          </button>
+          <button className="send-button" onClick={handleConfirm}>
+            Send
+          </button>
+        </div>
+
+        <div className="footer-text">
+          Protected by Rate Limiting
+        </div>
+      </div>
     </div>
   );
 }
