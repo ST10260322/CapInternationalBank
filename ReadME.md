@@ -2,25 +2,9 @@
 
 > A production-ready secure customer international payments portal with enterprise-grade security features and dual automated DevSecOps pipelines.
 
-**Student:** ST10260322  
-**Course:** Application Security Programming  
-**Assignment:** Task 2 - Secure Customer International Payments Portal
+**Student:** ST10260322 and ST10262898  
+**Course:** INSY7314  
 
----
-
-## 📋 Table of Contents
-- [Overview](#overview)
-- [Security Features](#security-features)
-- [Prerequisites](#prerequisites)
-- [Quick Start Guide](#quick-start-guide)
-- [Detailed Setup Instructions](#detailed-setup-instructions)
-- [Running the Application](#running-the-application)
-- [Testing the Application](#testing-the-application)
-- [Security Demonstrations](#security-demonstrations)
-- [DevSecOps Pipelines](#devsecops-pipelines)
-- [Troubleshooting](#troubleshooting)
-- [Project Structure](#project-structure)
-- [Marking Criteria Compliance](#marking-criteria-compliance)
 
 ---
 
@@ -40,7 +24,7 @@ This application is a secure international payments portal that implements multi
 
 ## 🔒 Security Features
 
-### 1. Password Security ✅ [10/10 Marks]
+### 1. Password Security 
 - **Bcrypt hashing** with salting (10 rounds)
 - **Real-time password strength meter** with visual feedback
 - **Complex password requirements:**
@@ -51,7 +35,7 @@ This application is a secure international payments portal that implements multi
   - At least one special character (@$!%*?&#)
 - Password validation on both frontend and backend
 
-### 2. Input Whitelisting ✅ [10/10 Marks]
+### 2. Input Whitelisting 
 - **RegEx pattern matching** for all input fields
 - **Professional validation** using validator.js library
 - **NoSQL injection prevention** - blocks MongoDB operators
@@ -63,7 +47,7 @@ This application is a secure international payments portal that implements multi
   - Length validation
   - Content sanitization
 
-### 3. SSL/TLS Security ✅ [20/20 Marks]
+### 3. SSL/TLS Security 
 - **TLS 1.2 and 1.3 only** (older versions disabled)
 - **Perfect Forward Secrecy** enabled
 - **HSTS** (HTTP Strict Transport Security) with 1-year max-age
@@ -75,7 +59,7 @@ This application is a secure international payments portal that implements multi
   - 1-hour session timeout
 - **SSL compression disabled** (prevents CRIME attack)
 
-### 4. Protection Against Attacks ✅ [28/30 Marks]
+### 4. Protection Against Attacks 
 - **CSRF Protection** - Token-based validation for all state-changing requests
 - **Helmet.js** - XSS protection, clickjacking prevention, CSP
 - **Rate Limiting** - 100 requests per 15 minutes per IP (brute force protection)
@@ -89,7 +73,7 @@ This application is a secure international payments portal that implements multi
   - X-XSS-Protection: 1; mode=block
   - Referrer-Policy: strict-origin-when-cross-origin
 
-### 5. DevSecOps Pipeline ✅ [10/10 Marks]
+### 5. DevSecOps Pipeline 
 **Dual automated security pipelines:**
 
 #### GitHub Actions Pipeline
@@ -139,7 +123,82 @@ Before running this application, ensure you have the following installed:
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Installation & Setup
 
-For those who want to get running immediately:
+### Step 1: Clone the Repository
 ```bash
+git clone https://github.com/ST10260322/CapInternationalBank.git
+cd CapInternationalBank
+
+Step 2: Install Dependencies
+
+Backend:
+cd backend
+npm install
+
+Frontend:
+cd ../frontend
+npm install
+
+Step 3: Trust SSL Certificates
+# Install mkcert root certificate (one-time setup)
+mkcert -install
+
+
+Step 4: Start the Application
+Terminal 1 - Backend Server:
+cd backend
+node server.js
+
+Terminal 2 - Frontend Server:
+cd frontend
+npm start
+
+Browser will automatically open to https://localhost:3000
+
+
+
+
+
+🎮 Demo Accounts
+Customer Account
+
+Email: user@test.com
+Password: Test123!@#
+
+Employee Account
+
+Email: messi@mail.com
+Password: @Messi123!
+Employee ID: EMP002
+
+
+
+
+
+📁 Project Structure
+
+CapInternationalBank/
+├── backend/
+│   ├── server.js              # Main Express server (900+ lines)
+│   ├── database.js            # MongoDB Atlas connection
+│   ├── models/                # User & Payment schemas
+│   ├── middleware/            # Employee authentication
+│   ├── *.pem                  # SSL certificates
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/        # React components
+│   │   ├── utils/             # Password strength validator
+│   │   └── api.js             # Axios with CSRF
+│   └── package.json
+├── .github/workflows/         # GitHub Actions pipeline
+├── .circleci/                 # CircleCI pipeline
+└── README.md
+
+
+🛠️ Technology Stack
+Frontend: React, React Router, Axios
+Backend: Node.js, Express, MongoDB Atlas
+Security: Bcrypt, Helmet.js, CSURF, Validator.js, Express-rate-limit
+DevOps: GitHub Actions, CircleCI, npm audit

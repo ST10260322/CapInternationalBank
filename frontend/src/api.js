@@ -12,12 +12,12 @@ const api = axios.create({
 // Request interceptor to add CSRF token to all state-changing requests
 api.interceptors.request.use(
   async (config) => {
-    console.log('Request method:', config.method); // Debug
+    console.log('Request method:', config.method); 
     
     // Add CSRF token for POST, PUT, DELETE, PATCH requests
     if (['post', 'put', 'delete', 'patch'].includes(config.method.toLowerCase())) {
       const csrfToken = await getCsrfToken();
-      console.log('CSRF token being sent:', csrfToken); // Debug
+      console.log('CSRF token being sent:', csrfToken); 
       
       if (csrfToken) {
         config.headers['x-csrf-token'] = csrfToken;
