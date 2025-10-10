@@ -53,12 +53,12 @@ function EmployeeDashboard() {
         <div className="sidebar-header">
           <div className="bank-logo">
             <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
-              <path d="M30 5L5 20H55L30 5Z" fill="#1976D2"/>
-              <rect x="10" y="25" width="8" height="25" fill="#1976D2"/>
-              <rect x="22" y="25" width="8" height="25" fill="#1976D2"/>
-              <rect x="34" y="25" width="8" height="25" fill="#1976D2"/>
-              <rect x="46" y="25" width="8" height="25" fill="#1976D2"/>
-              <rect x="5" y="50" width="50" height="5" fill="#1976D2"/>
+              <path d="M30 5L5 20H55L30 5Z" fill="#8B2222"/>
+              <rect x="10" y="25" width="8" height="25" fill="#8B2222"/>
+              <rect x="22" y="25" width="8" height="25" fill="#8B2222"/>
+              <rect x="34" y="25" width="8" height="25" fill="#8B2222"/>
+              <rect x="46" y="25" width="8" height="25" fill="#8B2222"/>
+              <rect x="5" y="50" width="50" height="5" fill="#8B2222"/>
             </svg>
           </div>
           <h2>CAP Bank</h2>

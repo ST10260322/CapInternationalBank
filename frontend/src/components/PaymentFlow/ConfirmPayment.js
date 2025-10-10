@@ -27,8 +27,7 @@ function ConfirmPayment({ prevStep, data }) {
 
   const handleStartOver = () => {
     if (window.confirm("Are you sure you want to start over? All entered data will be lost.")) {
-      // You can navigate to the first step or home page
-      navigate("/payment"); // Adjust this route as needed
+      navigate("/payment");
     }
   };
 
@@ -47,7 +46,7 @@ function ConfirmPayment({ prevStep, data }) {
         <div className="details-grid">
           {/* Left Column */}
           <div className="detail-item">
-            <span className="detail-label">Recipient name</span>
+            <span className="detail-label">Recipient Name</span>
             <div className="detail-value">{data.recipientName}</div>
           </div>
 
@@ -63,17 +62,17 @@ function ConfirmPayment({ prevStep, data }) {
 
           <div className="detail-item">
             <span className="detail-label">Amount</span>
-            <div className="detail-value">{data.amount}</div>
+            <div className="detail-value">R {parseFloat(data.amount).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
 
           <div className="detail-item">
-            <span className="detail-label">Recipient Account Number</span>
+            <span className="detail-label">Account Number</span>
             <div className="detail-value">{data.accountNumber}</div>
           </div>
 
           <div className="detail-item">
             <span className="detail-label">Reference</span>
-            <div className="detail-value">{data.reference}</div>
+            <div className="detail-value">{data.reference || 'N/A'}</div>
           </div>
 
           <div className="detail-item">

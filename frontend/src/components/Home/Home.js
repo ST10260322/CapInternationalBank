@@ -7,6 +7,16 @@ function Home() {
   const location = useLocation();
   const { userId } = location.state || {};
 
+  const handleLogout = () => {
+    // Clear any stored authentication data
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    sessionStorage.clear();
+    
+    // Navigate back to login
+    navigate("/login");
+  };
+
   return (
     <div className="home-container">
       {/* Sidebar */}
@@ -23,7 +33,10 @@ function Home() {
         <div className="nav-icon">💳</div>
         <div className="nav-icon">📊</div>
         <div className="nav-icon">👤</div>
-        <div className="nav-icon" style={{ marginTop: 'auto' }}>⚙️</div>
+        <div className="nav-icon logout-icon" style={{ marginTop: 'auto' }} onClick={handleLogout} title="Logout">
+          🚪
+        </div>
+        <div className="nav-icon">⚙️</div>
       </div>
 
       {/* Main Content */}
@@ -49,6 +62,9 @@ function Home() {
               <rect x="5" y="50" width="50" height="5" fill="white"/>
             </svg>
             <span>CAP International Bank</span>
+            <button className="logout-button" onClick={handleLogout}>
+              Logout
+            </button>
           </div>
         </div>
 
