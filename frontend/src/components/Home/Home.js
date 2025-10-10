@@ -12,9 +12,9 @@ function Home() {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     sessionStorage.clear();
-    
-    // Navigate back to login
-    navigate("/login");
+  
+    // Redirect to root (home)
+    window.location.href = "https://localhost:3000/";
   };
 
   return (
