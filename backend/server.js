@@ -37,18 +37,17 @@ app.use((req, res, next) => {
 });
 
 
-// =====================
+
 // CSRF Token Endpoint
-// =====================
 app.get("/csrf-token", (req, res) => {
   try {
     const token = crypto.randomBytes(32).toString('hex');
     res.cookie('_csrf', token, {
       httpOnly: true,
       secure: true,
-      sameSite: 'none',  // Change back to 'none' for cross-origin
+      sameSite: 'none',  
       path: '/',
-      domain: 'localhost'  // Explicitly set domain
+      domain: 'localhost'  
     });
     console.log('[CSRF Token] Token generated and cookie set:', token);
     res.json({ csrfToken: token });
@@ -61,9 +60,8 @@ app.get("/csrf-token", (req, res) => {
 
 
 
-// =====================
+
 // Security Middleware
-// =====================
 app.use(
   helmet({
     frameguard: { action: "deny" },
@@ -86,13 +84,7 @@ app.use(
   })
 );
 
-// // CORS setup
-// app.use(
-//   cors({
-//     origin: "https://localhost:3000",
-//     credentials: true
-//   })
-// );
+
 
 // Limit request body size to prevent DoS attacks
 app.use(express.json({ limit: '10kb' }));
@@ -102,9 +94,8 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 
 
-// =====================
+
 // Additional SSL/TLS Security Headers
-// =====================
 app.use((req, res, next) => {
   // Ensure secure protocol
   if (req.protocol !== 'https') {
@@ -133,9 +124,8 @@ app.use((req, res, next) => {
 
 
 
-// =====================
+
 // Session Middleware
-// =====================
 app.use(
   session({
     secret: "super-secret-key", 
@@ -153,9 +143,9 @@ app.use(
   })
 );
 
-// =====================
-// CSRF Protection (Fixed Configuration)
-// =====================
+
+// CSRF Protection 
+
 const csrfProtection = csrf({ 
   cookie: {
     key: '_csrf',
@@ -167,26 +157,6 @@ const csrfProtection = csrf({
 });
 
 
-// Apply CSRF protection selectively
-// app.use((req, res, next) => {
-//   console.log(`[CSRF Middleware] ${req.method} ${req.path}`);
-//   console.log('[CSRF Middleware] Cookies:', req.cookies);
-//   console.log('[CSRF Middleware] Headers:', req.headers);
-  
-//   const skipPaths = ['/', '/ssl-info', '/csrf-token'];
-//   const safeMethods = ['HEAD', 'OPTIONS'];
-  
-//   if (skipPaths.includes(req.path) || safeMethods.includes(req.method)) {
-//     console.log('[CSRF Middleware] Skipping CSRF protection');
-//     return next();
-//   }
-  
-//   console.log('[CSRF Middleware] Applying CSRF protection');
-//   console.log('[CSRF Middleware] CSRF Token from header:', req.headers['x-csrf-token']);
-//   console.log('[CSRF Middleware] CSRF Cookie:', req.cookies._csrf);
-  
-//   csrfProtection(req, res, next);
-// });
 
 
 
@@ -205,9 +175,7 @@ const csrfProtection = csrf({
 
 
 
-// =====================
 // Rate Limiting
-// =====================
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -218,9 +186,8 @@ app.use("/login", limiter);
 app.use("/register", limiter);
 app.use("/payments", limiter);
 
-/// =====================
-// Helper: Input Validation with Length Limits
-// =====================
+
+//Input Validation with Length Limits
 function validateInput(field, type) {
   // Length validation first (prevents buffer overflow attacks)
   const maxLengths = {
@@ -255,9 +222,8 @@ function validateInput(field, type) {
   return regexes[type] ? regexes[type].test(field) : true;
 }
 
-// =====================
-// Enhanced Input Validation
-// =====================
+
+//Input Validation
 
 // Validate email using validator.js
 function validateEmail(email) {
@@ -310,7 +276,7 @@ function validateName(name) {
 
 // Sanitize and validate reference field
 function validateReference(reference) {
-  if (!reference) return true; // Optional field
+  if (!reference) return true; 
   // Allow alphanumeric, spaces, and common punctuation
   return validator.isLength(reference, { max: 200 }) &&
          /^[A-Za-z0-9\s\-_.,!?()]+$/.test(reference);
@@ -320,9 +286,8 @@ function validateReference(reference) {
 
 
 
-// =====================
+
 // NoSQL Injection Middleware
-// =====================
 const noSQLInjectionMiddleware = (req, res, next) => {
   console.log('[NoSQL Middleware] Checking request...');
   try {
@@ -359,9 +324,8 @@ app.use(noSQLInjectionMiddleware);
 
 
 
-// =====================
+
 // NoSQL Injection Prevention
-// =====================
 
 /**
  * Prevents NoSQL injection by blocking MongoDB operators
@@ -449,9 +413,8 @@ function validateQueryOrParams(obj, type) {
 
 
 
-// =====================
+
 // Request Size Validation Middleware
-// =====================
 const validateRequestSize = (req, res, next) => {
   console.log('[Request Size Validator] Checking...');
   
@@ -493,9 +456,8 @@ app.use(validateRequestSize);
 
 
 
-// =====================
+
 // SSL/TLS Certificate Information
-// =====================
 function logCertificateInfo() {
   try {
     const cert = fs.readFileSync("./localhost+2.pem", 'utf8');
@@ -510,9 +472,8 @@ function logCertificateInfo() {
   }
 }
 
-// =====================
+
 // SSL/TLS Information Endpoint
-// =====================
 app.get("/ssl-info", (req, res) => {
   const sslInfo = {
     secure: req.secure,
@@ -545,9 +506,8 @@ app.get("/ssl-info", (req, res) => {
 
 
 
-// =====================
+
 // Routes
-// =====================
 app.get("/", (req, res) => res.send("Backend is running!"));
 
 
@@ -558,9 +518,8 @@ app.get("/", (req, res) => res.send("Backend is running!"));
 
 
 
-// ---------------------
+
 // Register Route (Enhanced with Length Limits)
-// ---------------------
 app.post("/register", async (req, res) => {
   console.log('[Register] Received request');
   
@@ -609,7 +568,7 @@ app.post("/register", async (req, res) => {
     return res.status(400).json({ message: "All fields are required" });
   }
 
-  // Enhanced validation using validator.js
+ 
   if (!validateName(name)) {
     return res.status(400).json({ message: "Invalid name format (letters only, max 50 characters)" });
   }
@@ -666,9 +625,8 @@ app.post("/register", async (req, res) => {
 
 
 
-// ---------------------
+
 // Login Route (Enhanced with NoSQL Protection)
-// ---------------------
 app.post("/login", async (req, res) => {
   let { email, password } = req.body;
 
@@ -691,7 +649,7 @@ app.post("/login", async (req, res) => {
   try {
     // Use explicit string matching to prevent operator injection
     const user = await User.findOne({ 
-      email: { $eq: email }  // Explicit equality check
+      email: { $eq: email }  
     });
     
     if (!user) return res.status(400).json({ message: "Invalid email or password" });
@@ -713,9 +671,8 @@ app.post("/login", async (req, res) => {
 
 
 
-// ---------------------
+
 // Auth Middleware
-// ---------------------
 function authMiddleware(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ message: "Unauthorized: Please log in first" });
   next();
@@ -728,9 +685,8 @@ function authMiddleware(req, res, next) {
 
 
 
-// ---------------------
-// Payment Route (Enhanced with Length Limits)
-// ---------------------
+
+// Payment Route 
 app.post("/payments", authMiddleware, async (req, res) => {
   let { recipientName, bank, accountNumber, recipientEmail, currency, amount, reference, swiftCode } = req.body;
   const userId = req.session.userId;
@@ -828,9 +784,8 @@ app.post("/payments", authMiddleware, async (req, res) => {
 
 
 
-// ---------------------
+
 // Employee Login Route
-// ---------------------
 app.post("/employee/login", async (req, res) => {
   let { email, password } = req.body;
 
@@ -853,7 +808,7 @@ app.post("/employee/login", async (req, res) => {
   try {
     const user = await User.findOne({ 
       email: { $eq: email },
-      isEmployee: true  // Only allow employee accounts
+      isEmployee: true  
     });
     
     if (!user) {
@@ -881,9 +836,8 @@ app.post("/employee/login", async (req, res) => {
   }
 });
 
-// ---------------------
+
 // Get Employee Dashboard Stats
-// ---------------------
 app.get("/employee/stats", employeeAuthMiddleware, async (req, res) => {
   try {
     const totalUsers = await User.countDocuments({ isEmployee: false });
@@ -931,9 +885,8 @@ app.get("/employee/stats", employeeAuthMiddleware, async (req, res) => {
   }
 });
 
-// ---------------------
+
 // Get All Users (with pagination and search)
-// ---------------------
 app.get("/employee/users", employeeAuthMiddleware, async (req, res) => {
   try {
     const { page = 1, limit = 10, search = '' } = req.query;
@@ -969,9 +922,8 @@ app.get("/employee/users", employeeAuthMiddleware, async (req, res) => {
   }
 });
 
-// ---------------------
+
 // Get User Details with Transaction History
-// ---------------------
 app.get("/employee/users/:userId", employeeAuthMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
@@ -1020,9 +972,9 @@ app.get("/employee/users/:userId", employeeAuthMiddleware, async (req, res) => {
   }
 });
 
-// ---------------------
+
+
 // Get All Transactions (with filtering)
-// ---------------------
 app.get("/employee/transactions", employeeAuthMiddleware, async (req, res) => {
   try {
     const { 
@@ -1075,9 +1027,9 @@ app.get("/employee/transactions", employeeAuthMiddleware, async (req, res) => {
   }
 });
 
-// ---------------------
+
+
 // Get Single Transaction Details
-// ---------------------
 app.get("/employee/transactions/:transactionId", employeeAuthMiddleware, async (req, res) => {
   try {
     const { transactionId } = req.params;
@@ -1096,9 +1048,8 @@ app.get("/employee/transactions/:transactionId", employeeAuthMiddleware, async (
   }
 });
 
-// ---------------------
+
 // Approve Transaction
-// ---------------------
 app.post("/employee/transactions/:transactionId/approve", employeeAuthMiddleware, async (req, res) => {
   try {
     const { transactionId } = req.params;
@@ -1139,9 +1090,9 @@ app.post("/employee/transactions/:transactionId/approve", employeeAuthMiddleware
   }
 });
 
-// ---------------------
+
+
 // Reject Transaction
-// ---------------------
 app.post("/employee/transactions/:transactionId/reject", employeeAuthMiddleware, async (req, res) => {
   try {
     const { transactionId } = req.params;
@@ -1188,9 +1139,8 @@ app.post("/employee/transactions/:transactionId/reject", employeeAuthMiddleware,
   }
 });
 
-// ---------------------
+
 // Get Employee Profile
-// ---------------------
 app.get("/employee/profile", employeeAuthMiddleware, async (req, res) => {
   try {
     const employee = await User.findById(req.employee._id).select('-password');
@@ -1227,16 +1177,6 @@ app.get("/employee/profile", employeeAuthMiddleware, async (req, res) => {
 
 
 
-// // CSRF error handler
-// app.use((err, req, res, next) => {
-//   if (err.code === 'EBADCSRFTOKEN') {
-//     return res.status(403).json({ 
-//       message: 'Invalid CSRF token. Request rejected for security.',
-//       error: 'CSRF_VALIDATION_FAILED'
-//     });
-//   }
-//   next(err);
-// });
 
 
 
@@ -1244,9 +1184,8 @@ app.get("/employee/profile", employeeAuthMiddleware, async (req, res) => {
 
 
 
-// =====================
+
 // HTTPS Server with Enhanced Security
-// =====================
 const options = {
   key: fs.readFileSync("./localhost+2-key.pem"),
   cert: fs.readFileSync("./localhost+2.pem"),
