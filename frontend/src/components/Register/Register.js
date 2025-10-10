@@ -208,7 +208,8 @@ function Register() {
                 }}
                 required
                 className="form-input"
-                maxLength="100"
+                style={{ width: "250px"}}
+                maxLength="50"
               />
               {countryValid && <span className="checkmark">✓</span>}
             </div>
