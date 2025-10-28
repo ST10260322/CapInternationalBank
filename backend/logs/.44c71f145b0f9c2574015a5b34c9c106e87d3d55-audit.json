@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/Users/phenyonel/customer-portal/backend/logs/.44c71f145b0f9c2574015a5b34c9c106e87d3d55-audit.json",
+    "files": [
+        {
+            "date": 1761686654469,
+            "name": "/Users/phenyonel/customer-portal/backend/logs/security-errors-2025-10-28.log",
+            "hash": "49c3a9c36b2d8825c4ed55320c4f7d8a7a1ba8ea6f4f25d533239453e8ab67ca"
+        }
+    ],
+    "hashType": "sha256"
+}

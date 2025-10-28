@@ -12,12 +12,17 @@ import csrf from "csurf";
 import cookieParser from "cookie-parser";
 import crypto from 'crypto';
 import { employeeAuthMiddleware } from "./middleware/employeeAuth.js";
-
-
-// MongoDB
-import "./database.js"; // MongoDB connection
+import mongoose from "./database.js"; // MongoDB connection
 import User from "./models/User.js";
 import Payment from "./models/Payment.js";
+import ExpressBrute from "express-brute";
+import MongooseStore from "express-brute-mongoose";
+import hpp from "hpp";
+import { registerSchema, loginSchema, paymentSchema } from './validation/schemas.js'; 
+import { validate } from './middleware/validate.js';
+import { securityLogger, logSecurityEvent, SecurityEvents } from './utils/logger.js'; 
+
+
 
 const app = express();
 
@@ -58,7 +63,39 @@ app.get("/csrf-token", (req, res) => {
 });
 
 
+// Express Brute Configuration for Brute Force Protection
+const bruteForceSchema = new mongoose.Schema({
+  _id: String,
+  data: {
+    count: Number,
+    lastRequest: Date,
+    firstRequest: Date
+  },
+  expires: { type: Date, index: { expires: '1d' }}
+});
 
+const BruteForceModel = mongoose.model("bruteforce", bruteForceSchema);
+const bruteForceStore = new MongooseStore(BruteForceModel);
+
+const bruteforce = new ExpressBrute(bruteForceStore, {
+  freeRetries: 15,
+  minWait: 1 * 60 * 1000,
+  maxWait: 5 * 60 * 1000,
+  lifetime: 60 * 60,
+  failCallback: function (req, res, next, nextValidRequestDate) {
+    
+    logSecurityEvent(SecurityEvents.BRUTE_FORCE_BLOCKED, {
+      ip: req.ip,
+      path: req.path,
+      nextValidRequestDate: nextValidRequestDate
+    });
+    
+    res.status(429).json({ 
+      message: "Too many failed login attempts. Please try again later.",
+      nextValidRequestDate: nextValidRequestDate 
+    });
+  }
+});
 
 
 // Security Middleware
@@ -179,12 +216,32 @@ const csrfProtection = csrf({
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: "Too many requests from this IP, please try again later."
+  message: "Too many requests from this IP, please try again later.",
+  handler: (req, res) => {
+  
+    logSecurityEvent(SecurityEvents.RATE_LIMIT_EXCEEDED, {
+      ip: req.ip,
+      path: req.path,
+      method: req.method
+    });
+    
+    res.status(429).json({
+      message: "Too many requests from this IP, please try again later."
+    });
+  }
 });
 
 app.use("/login", limiter);
 app.use("/register", limiter);
 app.use("/payments", limiter);
+
+// HTTP Parameter Pollution Protection
+app.use(hpp({
+  whitelist: ['currency', 'amount', 'page', 'limit', 'status', 'search', 'sortBy', 'sortOrder']
+}));
+
+
+
 
 
 //Input Validation with Length Limits
@@ -291,14 +348,12 @@ function validateReference(reference) {
 const noSQLInjectionMiddleware = (req, res, next) => {
   console.log('[NoSQL Middleware] Checking request...');
   try {
-    // Only sanitize body - query and params are handled differently
     if (req.body && Object.keys(req.body).length > 0) {
       console.log('[NoSQL Middleware] Original body:', req.body);
       req.body = sanitizeRequestBody(req.body);
       console.log('[NoSQL Middleware] Sanitized body:', req.body);
     }
     
-    // For query and params, just validate without reassigning
     if (req.query && Object.keys(req.query).length > 0) {
       validateQueryOrParams(req.query, 'query');
     }
@@ -311,6 +366,16 @@ const noSQLInjectionMiddleware = (req, res, next) => {
     next();
   } catch (error) {
     console.error('[NoSQL Middleware] ❌ ERROR:', error.message);
+    
+    
+    logSecurityEvent(SecurityEvents.NOSQL_INJECTION_ATTEMPT, {
+      ip: req.ip,
+      path: req.path,
+      method: req.method,
+      error: error.message,
+      body: JSON.stringify(req.body)
+    });
+    
     return res.status(400).json({ 
       message: "Invalid request format", 
       error: error.message 
@@ -519,8 +584,8 @@ app.get("/", (req, res) => res.send("Backend is running!"));
 
 
 
-// Register Route (Enhanced with Length Limits)
-app.post("/register", async (req, res) => {
+// Register Route 
+app.post("/register", validate(registerSchema), async (req, res) => {
   console.log('[Register] Received request');
   
   // Manual CSRF validation
@@ -532,6 +597,15 @@ app.post("/register", async (req, res) => {
   
   if (!csrfTokenFromHeader || !csrfTokenFromCookie || csrfTokenFromHeader !== csrfTokenFromCookie) {
     console.log('[Register] CSRF validation failed');
+    
+    // Security logging for CSRF failure
+    logSecurityEvent(SecurityEvents.CSRF_VALIDATION_FAILED, {
+      route: '/register',
+      ip: req.ip,
+      hasHeader: !!csrfTokenFromHeader,
+      hasCookie: !!csrfTokenFromCookie
+    });
+    
     return res.status(403).json({ message: 'Invalid CSRF token' });
   }
   
@@ -546,6 +620,13 @@ app.post("/register", async (req, res) => {
   if (typeof name !== 'string' || typeof surname !== 'string' || 
       typeof idNumber !== 'string' || typeof email !== 'string' || 
       typeof password !== 'string') {
+    
+    logSecurityEvent(SecurityEvents.INVALID_INPUT, {
+      route: '/register',
+      ip: req.ip,
+      reason: 'Invalid input type'
+    });
+    
     return res.status(400).json({ message: "Invalid input format" });
   }
 
@@ -601,11 +682,33 @@ app.post("/register", async (req, res) => {
       password: hashedPassword
     });
 
+    // Security logging for successful registration
+    logSecurityEvent(SecurityEvents.SESSION_CREATED, {
+      email: email,
+      userId: newUser._id,
+      ip: req.ip,
+      action: 'User registered'
+    });
+
     res.status(201).json({ message: "User registered!", userId: newUser._id });
   } catch (err) {
     if (err.code === 11000) {
+      // Security logging for duplicate registration attempt
+      logSecurityEvent(SecurityEvents.SUSPICIOUS_ACTIVITY, {
+        email: email,
+        ip: req.ip,
+        reason: 'Attempted duplicate registration'
+      });
+      
       return res.status(400).json({ message: "Email already exists" });
     }
+    
+    // Security logging for registration errors
+    securityLogger.error('Registration error', {
+      error: err.message,
+      ip: req.ip
+    });
+    
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
@@ -626,12 +729,17 @@ app.post("/register", async (req, res) => {
 
 
 
-// Login Route (Enhanced with NoSQL Protection)
-app.post("/login", async (req, res) => {
+// Login Route 
+app.post("/login", validate(loginSchema), bruteforce.prevent, async (req, res) => {
   let { email, password } = req.body;
 
   // Type checking - ensure strings only
   if (typeof email !== 'string' || typeof password !== 'string') {
+    logSecurityEvent(SecurityEvents.INVALID_INPUT, {
+      route: '/login',
+      ip: req.ip,
+      reason: 'Invalid input type'
+    });
     return res.status(400).json({ message: "Invalid input format" });
   }
 
@@ -643,23 +751,98 @@ app.post("/login", async (req, res) => {
   }
   
   if (!validateEmail(email)) {
+    logSecurityEvent(SecurityEvents.INVALID_INPUT, {
+      route: '/login',
+      email: email,
+      ip: req.ip,
+      reason: 'Invalid email format'
+    });
     return res.status(400).json({ message: "Invalid email format" });
   }
 
   try {
-    // Use explicit string matching to prevent operator injection
     const user = await User.findOne({ 
       email: { $eq: email }  
     });
     
-    if (!user) return res.status(400).json({ message: "Invalid email or password" });
+    if (!user) {
+      logSecurityEvent(SecurityEvents.LOGIN_FAILURE, {
+        email: email,
+        ip: req.ip,
+        reason: 'User not found'
+      });
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    // Check if account is locked
+    if (user.isLocked) {
+      const lockTimeRemaining = Math.ceil((user.lockUntil - Date.now()) / 1000 / 60);
+      logSecurityEvent(SecurityEvents.ACCOUNT_LOCKED, {
+        email: email,
+        userId: user._id,
+        ip: req.ip,
+        lockTimeRemaining: lockTimeRemaining
+      });
+      return res.status(423).json({ 
+        message: `Account is locked due to too many failed login attempts. Try again in ${lockTimeRemaining} minutes.`
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid email or password" });
+    
+    if (!isMatch) {
+      await user.incLoginAttempts();
+      
+      logSecurityEvent(SecurityEvents.LOGIN_FAILURE, {
+        email: email,
+        userId: user._id,
+        ip: req.ip,
+        loginAttempts: user.loginAttempts + 1,
+        reason: 'Incorrect password'
+      });
+      
+      const updatedUser = await User.findById(user._id);
+      if (updatedUser.isLocked) {
+        logSecurityEvent(SecurityEvents.ACCOUNT_LOCKED, {
+          email: email,
+          userId: user._id,
+          ip: req.ip,
+          reason: 'Too many failed attempts'
+        });
+        return res.status(423).json({ 
+          message: "Too many failed login attempts. Your account has been locked for 2 hours."
+        });
+      }
+      
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    // Successful login - reset login attempts if any exist
+    if (user.loginAttempts > 0 || user.lockUntil) {
+      await user.resetLoginAttempts();
+      logSecurityEvent(SecurityEvents.ACCOUNT_UNLOCKED, {
+        email: email,
+        userId: user._id,
+        ip: req.ip
+      });
+    }
 
     req.session.userId = user._id;
+    
+    logSecurityEvent(SecurityEvents.LOGIN_SUCCESS, {
+      email: email,
+      userId: user._id,
+      ip: req.ip,
+      sessionId: req.session.id
+    });
+    
     res.json({ message: "Login successful!", userId: user._id });
   } catch (err) {
+    securityLogger.error('Login error', {
+      error: err.message,
+      stack: err.stack,
+      ip: req.ip
+    });
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
@@ -674,7 +857,16 @@ app.post("/login", async (req, res) => {
 
 // Auth Middleware
 function authMiddleware(req, res, next) {
-  if (!req.session.userId) return res.status(401).json({ message: "Unauthorized: Please log in first" });
+  if (!req.session.userId) {
+    
+    logSecurityEvent(SecurityEvents.UNAUTHORIZED_ACCESS, {
+      ip: req.ip,
+      path: req.path,
+      method: req.method
+    });
+    
+    return res.status(401).json({ message: "Unauthorized: Please log in first" });
+  }
   next();
 }
 
@@ -687,7 +879,7 @@ function authMiddleware(req, res, next) {
 
 
 // Payment Route 
-app.post("/payments", authMiddleware, async (req, res) => {
+app.post("/payments", authMiddleware, validate(paymentSchema), async (req, res) => {
   let { recipientName, bank, accountNumber, recipientEmail, currency, amount, reference, swiftCode } = req.body;
   const userId = req.session.userId;
 
@@ -786,7 +978,7 @@ app.post("/payments", authMiddleware, async (req, res) => {
 
 
 // Employee Login Route
-app.post("/employee/login", async (req, res) => {
+app.post("/employee/login", validate(loginSchema), bruteforce.prevent, async (req, res) => {
   let { email, password } = req.body;
 
   // Type checking
@@ -815,9 +1007,32 @@ app.post("/employee/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials or not an employee account" });
     }
 
+    // Check if account is locked
+    if (user.isLocked) {
+      const lockTimeRemaining = Math.ceil((user.lockUntil - Date.now()) / 1000 / 60);
+      return res.status(423).json({ 
+        message: `Account is locked due to too many failed login attempts. Try again in ${lockTimeRemaining} minutes.`
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
+    
     if (!isMatch) {
+      await user.incLoginAttempts();
+      
+      const updatedUser = await User.findById(user._id);
+      if (updatedUser.isLocked) {
+        return res.status(423).json({ 
+          message: "Too many failed login attempts. Your account has been locked for 2 hours."
+        });
+      }
+      
       return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Reset login attempts on successful login
+    if (user.loginAttempts > 0 || user.lockUntil) {
+      await user.resetLoginAttempts();
     }
 
     req.session.userId = user._id;
@@ -1179,7 +1394,37 @@ app.get("/employee/profile", employeeAuthMiddleware, async (req, res) => {
 
 
 
-
+// Security Logs Endpoint (for demonstration/monitoring)
+app.get("/security-logs", employeeAuthMiddleware, (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  
+  try {
+    const logsDir = path.join(__dirname, 'logs');
+    const today = new Date().toISOString().split('T')[0];
+    const securityLogFile = path.join(logsDir, `security-${today}.log`);
+    
+    if (fs.existsSync(securityLogFile)) {
+      const logs = fs.readFileSync(securityLogFile, 'utf8')
+        .split('\n')
+        .filter(line => line.trim())
+        .slice(-50) // Last 50 entries
+        .map(line => {
+          try {
+            return JSON.parse(line);
+          } catch {
+            return { raw: line };
+          }
+        });
+      
+      res.json({ logs, count: logs.length });
+    } else {
+      res.json({ logs: [], message: 'No security logs for today' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Error reading logs', error: err.message });
+  }
+});
 
 
 
