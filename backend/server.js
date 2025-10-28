@@ -24,6 +24,15 @@ import { securityLogger, logSecurityEvent, SecurityEvents } from './utils/logger
 
 
 
+// Generate unique account number
+function generateAccountNumber() {
+  // Format: ACC + timestamp + random 4 digits
+  // Example: ACC1730152430001234
+  const timestamp = Date.now();
+  const random = Math.floor(1000 + Math.random() * 9000);
+  return `ACC${timestamp}${random}`;
+}
+
 const app = express();
 
 // Minimal middleware needed for /csrf-token endpoint
@@ -674,10 +683,15 @@ app.post("/register", validate(registerSchema), async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Generate unique account number
+    const accountNumber = generateAccountNumber();
+
     const newUser = await User.create({
       name,
       surname,
       idNumber,
+      accountNumber,
       email,
       password: hashedPassword
     });
@@ -685,13 +699,19 @@ app.post("/register", validate(registerSchema), async (req, res) => {
     // Security logging for successful registration
     logSecurityEvent(SecurityEvents.SESSION_CREATED, {
       email: email,
+      accountNumber: accountNumber,
       userId: newUser._id,
       ip: req.ip,
       action: 'User registered'
     });
 
-    res.status(201).json({ message: "User registered!", userId: newUser._id });
-  } catch (err) {
+    // Return account number to user
+  res.status(201).json({ 
+    message: "User registered successfully!", 
+    userId: newUser._id,
+    accountNumber: accountNumber  
+  });
+} catch (err) {
     if (err.code === 11000) {
       // Security logging for duplicate registration attempt
       logSecurityEvent(SecurityEvents.SUSPICIOUS_ACTIVITY, {
@@ -731,10 +751,10 @@ app.post("/register", validate(registerSchema), async (req, res) => {
 
 // Login Route 
 app.post("/login", validate(loginSchema), bruteforce.prevent, async (req, res) => {
-  let { email, password } = req.body;
+  let { accountNumber, password } = req.body;
 
   // Type checking - ensure strings only
-  if (typeof email !== 'string' || typeof password !== 'string') {
+  if (typeof accountNumber !== 'string' || typeof password !== 'string') {
     logSecurityEvent(SecurityEvents.INVALID_INPUT, {
       route: '/login',
       ip: req.ip,
@@ -743,42 +763,33 @@ app.post("/login", validate(loginSchema), bruteforce.prevent, async (req, res) =
     return res.status(400).json({ message: "Invalid input format" });
   }
 
-  email = sanitizeHtml(email.trim().toLowerCase());
+  accountNumber = sanitizeHtml(accountNumber.trim());
   password = sanitizeHtml(password);
 
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
-  }
-  
-  if (!validateEmail(email)) {
-    logSecurityEvent(SecurityEvents.INVALID_INPUT, {
-      route: '/login',
-      email: email,
-      ip: req.ip,
-      reason: 'Invalid email format'
-    });
-    return res.status(400).json({ message: "Invalid email format" });
+  if (!accountNumber || !password) {
+    return res.status(400).json({ message: "Account number and password are required" });
   }
 
   try {
+    // Find user by account number
     const user = await User.findOne({ 
-      email: { $eq: email }  
+      accountNumber: { $eq: accountNumber }  
     });
     
     if (!user) {
       logSecurityEvent(SecurityEvents.LOGIN_FAILURE, {
-        email: email,
+        accountNumber: accountNumber,
         ip: req.ip,
-        reason: 'User not found'
+        reason: 'Account not found'
       });
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({ message: "Invalid account number or password" });
     }
 
     // Check if account is locked
     if (user.isLocked) {
       const lockTimeRemaining = Math.ceil((user.lockUntil - Date.now()) / 1000 / 60);
       logSecurityEvent(SecurityEvents.ACCOUNT_LOCKED, {
-        email: email,
+        accountNumber: accountNumber,
         userId: user._id,
         ip: req.ip,
         lockTimeRemaining: lockTimeRemaining
@@ -794,7 +805,7 @@ app.post("/login", validate(loginSchema), bruteforce.prevent, async (req, res) =
       await user.incLoginAttempts();
       
       logSecurityEvent(SecurityEvents.LOGIN_FAILURE, {
-        email: email,
+        accountNumber: accountNumber,
         userId: user._id,
         ip: req.ip,
         loginAttempts: user.loginAttempts + 1,
@@ -804,7 +815,7 @@ app.post("/login", validate(loginSchema), bruteforce.prevent, async (req, res) =
       const updatedUser = await User.findById(user._id);
       if (updatedUser.isLocked) {
         logSecurityEvent(SecurityEvents.ACCOUNT_LOCKED, {
-          email: email,
+          accountNumber: accountNumber,
           userId: user._id,
           ip: req.ip,
           reason: 'Too many failed attempts'
@@ -814,14 +825,14 @@ app.post("/login", validate(loginSchema), bruteforce.prevent, async (req, res) =
         });
       }
       
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({ message: "Invalid account number or password" });
     }
 
     // Successful login - reset login attempts if any exist
     if (user.loginAttempts > 0 || user.lockUntil) {
       await user.resetLoginAttempts();
       logSecurityEvent(SecurityEvents.ACCOUNT_UNLOCKED, {
-        email: email,
+        accountNumber: accountNumber,
         userId: user._id,
         ip: req.ip
       });
@@ -830,13 +841,19 @@ app.post("/login", validate(loginSchema), bruteforce.prevent, async (req, res) =
     req.session.userId = user._id;
     
     logSecurityEvent(SecurityEvents.LOGIN_SUCCESS, {
-      email: email,
+      accountNumber: accountNumber,
       userId: user._id,
       ip: req.ip,
       sessionId: req.session.id
     });
     
-    res.json({ message: "Login successful!", userId: user._id });
+    // Return user name for welcome message
+    res.json({ 
+      message: "Login successful!", 
+      userId: user._id,
+      name: user.name,           
+      surname: user.surname     
+    });
   } catch (err) {
     securityLogger.error('Login error', {
       error: err.message,

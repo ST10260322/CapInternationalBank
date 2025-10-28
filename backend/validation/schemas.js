@@ -59,21 +59,18 @@ export const registerSchema = Joi.object({
 
 // Login validation schema
 export const loginSchema = Joi.object({
-  email: Joi.string()
-    .email()
-    .max(100)
-    .required()
-    .messages({
-      'string.email': 'Invalid email format',
-      'any.required': 'Email is required'
-    }),
-  
-  password: Joi.string()
-    .required()
-    .messages({
-      'any.required': 'Password is required'
-    })
-});
+    accountNumber: Joi.string()
+      .required()
+      .messages({
+        'any.required': 'Account number is required'
+      }),
+    
+    password: Joi.string()
+      .required()
+      .messages({
+        'any.required': 'Password is required'
+      })
+  });
 
 // Payment validation schema
 export const paymentSchema = Joi.object({

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./Home.css";
 
@@ -6,11 +6,24 @@ function Home() {
   const navigate = useNavigate();
   const location = useLocation();
   const { userId } = location.state || {};
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    // Get user name from localStorage
+    const name = localStorage.getItem('userName');
+    const surname = localStorage.getItem('userSurname');
+    
+    if (name && surname) {
+      setUserName(`${name} ${surname}`);
+    }
+  }, []);
 
   const handleLogout = () => {
-    // Clear any stored authentication data
+    // Clear all stored authentication data
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userSurname');
     sessionStorage.clear();
   
     // Redirect to root (home)
@@ -67,6 +80,14 @@ function Home() {
             </button>
           </div>
         </div>
+
+        {/* Welcome Message */}
+        {userName && (
+          <div className="welcome-banner">
+            <h2 className="welcome-message">Welcome, {userName}!</h2>
+            <p className="welcome-sub">We're glad to have you back</p>
+          </div>
+        )}
 
         {/* Dashboard Grid */}
         <div className="dashboard-grid">

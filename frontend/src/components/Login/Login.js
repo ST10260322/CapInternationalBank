@@ -4,7 +4,7 @@ import "./Login.css";
 import api from "../../api";
 
 function Login() {
-  const [email, setEmail] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
@@ -12,8 +12,14 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post("/login", { email, password });
-      setMessage(res.data.message + " (User ID: " + res.data.userId + ")");
+      const res = await api.post("/login", { accountNumber, password });
+      
+      // Store user details in localStorage
+      localStorage.setItem('userName', res.data.name);
+      localStorage.setItem('userSurname', res.data.surname);
+      localStorage.setItem('userId', res.data.userId);
+      
+      setMessage(res.data.message);
 
       if (res.data.userId) {
         navigate("/home", { state: { userId: res.data.userId } });
@@ -52,12 +58,12 @@ function Login() {
         
         <form onSubmit={handleLogin} className="login-form">
           <div className="input-group">
-            <label className="input-label">Email</label>
+            <label className="input-label">Account Number</label>
             <input
-              type="email"
-              placeholder="capinternationalbank@gmail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              placeholder="Enter your account number"
+              value={accountNumber}
+              onChange={(e) => setAccountNumber(e.target.value)}
               required
               className="form-input"
             />
