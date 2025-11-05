@@ -153,3 +153,22 @@ export const paymentSchema = Joi.object({
       'string.max': 'SWIFT code must be less than 11 characters'
     })
 });
+
+// Employee Login validation schema
+export const employeeLoginSchema = Joi.object({
+  email: Joi.string()
+    .email()
+    .max(100)
+    .required()
+    .messages({
+      'string.email': 'Invalid email format',
+      'string.max': 'Email must be less than 100 characters',
+      'any.required': 'Email is required'
+    }),
+  
+  password: Joi.string()
+    .required()
+    .messages({
+      'any.required': 'Password is required'
+    })
+});

@@ -1,0 +1,3 @@
+{"accountType":"employee","email":"messi@gmail.com","event":"LOGIN_FAILURE","ip":"::1","level":"info","loginAttempts":1,"message":"Security Event","reason":"Incorrect password","timestamp":"2025-11-05T09:43:49.403Z","userId":"68e82c04bc6fa52e15b85d51"}
+{"accountType":"employee","email":"messi@gmail.com","event":"ACCOUNT_UNLOCKED","ip":"::1","level":"info","message":"Security Event","timestamp":"2025-11-05T09:44:16.325Z","userId":"68e82c04bc6fa52e15b85d51"}
+{"accountType":"employee","email":"messi@gmail.com","event":"LOGIN_SUCCESS","ip":"::1","level":"info","message":"Security Event","sessionId":"RSAtVZ836CxNaBLuNG-IMS-uPwJYfkZw","timestamp":"2025-11-05T09:44:16.327Z","userId":"68e82c04bc6fa52e15b85d51"}

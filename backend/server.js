@@ -18,7 +18,7 @@ import Payment from "./models/Payment.js";
 import ExpressBrute from "express-brute";
 import MongooseStore from "express-brute-mongoose";
 import hpp from "hpp";
-import { registerSchema, loginSchema, paymentSchema } from './validation/schemas.js'; 
+import { registerSchema, loginSchema, paymentSchema, employeeLoginSchema } from './validation/schemas.js';
 import { validate } from './middleware/validate.js';
 import { securityLogger, logSecurityEvent, SecurityEvents } from './utils/logger.js'; 
 
@@ -243,6 +243,12 @@ const limiter = rateLimit({
 app.use("/login", limiter);
 app.use("/register", limiter);
 app.use("/payments", limiter);
+
+// Rate limiting for employee routes
+app.use("/employee/login", limiter);
+app.use("/employee/stats", limiter);
+app.use("/employee/users", limiter);
+app.use("/employee/transactions", limiter);
 
 // HTTP Parameter Pollution Protection
 app.use(hpp({
@@ -995,11 +1001,16 @@ app.post("/payments", authMiddleware, validate(paymentSchema), async (req, res) 
 
 
 // Employee Login Route
-app.post("/employee/login", validate(loginSchema), bruteforce.prevent, async (req, res) => {
+app.post("/employee/login", validate(employeeLoginSchema), bruteforce.prevent, async (req, res) => {
   let { email, password } = req.body;
 
-  // Type checking
+  // Type checking - ensure strings only
   if (typeof email !== 'string' || typeof password !== 'string') {
+    logSecurityEvent(SecurityEvents.INVALID_INPUT, {
+      route: '/employee/login',
+      ip: req.ip,
+      reason: 'Invalid input type'
+    });
     return res.status(400).json({ message: "Invalid input format" });
   }
 
@@ -1011,6 +1022,12 @@ app.post("/employee/login", validate(loginSchema), bruteforce.prevent, async (re
   }
   
   if (!validateEmail(email)) {
+    logSecurityEvent(SecurityEvents.INVALID_INPUT, {
+      route: '/employee/login',
+      email: email,
+      ip: req.ip,
+      reason: 'Invalid email format'
+    });
     return res.status(400).json({ message: "Invalid email format" });
   }
 
@@ -1021,12 +1038,24 @@ app.post("/employee/login", validate(loginSchema), bruteforce.prevent, async (re
     });
     
     if (!user) {
+      logSecurityEvent(SecurityEvents.LOGIN_FAILURE, {
+        email: email,
+        ip: req.ip,
+        reason: 'Employee account not found'
+      });
       return res.status(400).json({ message: "Invalid credentials or not an employee account" });
     }
 
     // Check if account is locked
     if (user.isLocked) {
       const lockTimeRemaining = Math.ceil((user.lockUntil - Date.now()) / 1000 / 60);
+      logSecurityEvent(SecurityEvents.ACCOUNT_LOCKED, {
+        email: email,
+        userId: user._id,
+        ip: req.ip,
+        lockTimeRemaining: lockTimeRemaining,
+        accountType: 'employee'
+      });
       return res.status(423).json({ 
         message: `Account is locked due to too many failed login attempts. Try again in ${lockTimeRemaining} minutes.`
       });
@@ -1037,8 +1066,24 @@ app.post("/employee/login", validate(loginSchema), bruteforce.prevent, async (re
     if (!isMatch) {
       await user.incLoginAttempts();
       
+      logSecurityEvent(SecurityEvents.LOGIN_FAILURE, {
+        email: email,
+        userId: user._id,
+        ip: req.ip,
+        loginAttempts: user.loginAttempts + 1,
+        reason: 'Incorrect password',
+        accountType: 'employee'
+      });
+      
       const updatedUser = await User.findById(user._id);
       if (updatedUser.isLocked) {
+        logSecurityEvent(SecurityEvents.ACCOUNT_LOCKED, {
+          email: email,
+          userId: user._id,
+          ip: req.ip,
+          reason: 'Too many failed attempts',
+          accountType: 'employee'
+        });
         return res.status(423).json({ 
           message: "Too many failed login attempts. Your account has been locked for 2 hours."
         });
@@ -1047,13 +1092,27 @@ app.post("/employee/login", validate(loginSchema), bruteforce.prevent, async (re
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Reset login attempts on successful login
+    // Successful login - reset login attempts if any exist
     if (user.loginAttempts > 0 || user.lockUntil) {
       await user.resetLoginAttempts();
+      logSecurityEvent(SecurityEvents.ACCOUNT_UNLOCKED, {
+        email: email,
+        userId: user._id,
+        ip: req.ip,
+        accountType: 'employee'
+      });
     }
 
     req.session.userId = user._id;
     req.session.isEmployee = true;
+    
+    logSecurityEvent(SecurityEvents.LOGIN_SUCCESS, {
+      email: email,
+      userId: user._id,
+      ip: req.ip,
+      sessionId: req.session.id,
+      accountType: 'employee'
+    });
     
     res.json({ 
       message: "Employee login successful!", 
@@ -1064,6 +1123,11 @@ app.post("/employee/login", validate(loginSchema), bruteforce.prevent, async (re
       department: user.department
     });
   } catch (err) {
+    securityLogger.error('Employee login error', {
+      error: err.message,
+      stack: err.stack,
+      ip: req.ip
+    });
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });

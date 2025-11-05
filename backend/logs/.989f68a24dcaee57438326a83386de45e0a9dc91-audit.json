@@ -9,6 +9,11 @@
             "date": 1761686654471,
             "name": "/Users/phenyonel/customer-portal/backend/logs/app-2025-10-28.log",
             "hash": "c338b72edb8e2d348de14e919d153e0bb0a03f8bc007b53af3fa2fbea35dc3d4"
+        },
+        {
+            "date": 1762335492277,
+            "name": "/Users/phenyonel/customer-portal/backend/logs/app-2025-11-05.log",
+            "hash": "51abeac4022992afa7b1ff2b78b20d8a88bdabbf1ebd621fcd369fdd89cfe100"
         }
     ],
     "hashType": "sha256"

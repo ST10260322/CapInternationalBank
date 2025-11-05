@@ -1,7 +1,5 @@
 // createEmployee.js
 // Helper script to create employee accounts
-// SAVE THIS FILE IN YOUR backend/ FOLDER
-// Run with: node createEmployee.js
 
 import mongoose from "./database.js";
 import User from "./models/User.js";
@@ -46,6 +44,7 @@ async function createEmployee() {
       isEmployee: true,
       employeeId: employeeData.employeeId,
       department: employeeData.department
+      //accountNumber (optional field)
     });
 
     console.log("\n✅ Employee account created successfully!");
@@ -64,6 +63,11 @@ async function createEmployee() {
     process.exit(0);
   } catch (error) {
     console.error("\n❌ Error creating employee:", error.message);
+    console.log("\nCommon errors:");
+    console.log("- Email already exists in database");
+    console.log("- MongoDB connection failed");
+    console.log("- Missing required fields in User model");
+    console.log("\nActual error:", error);
     process.exit(1);
   }
 }
