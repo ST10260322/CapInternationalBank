@@ -10,6 +10,7 @@
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
@@ -18,6 +19,52 @@
 .env.test.local
 .env.production.local
 
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+logs/
+*.log
+
+# SSL Certificates (NEVER COMMIT THESE!)
+*.pem
+*.key
+*.crt
+*.cert
+*.pfx
+
+# MongoDB connection strings (NEVER COMMIT!)
+database.js
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# CircleCI local
+.circleci/local/
+
+# SonarQube
+.scannerwork/
+
+# Misc
+.history
