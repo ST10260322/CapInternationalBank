@@ -246,6 +246,7 @@ app.use("/payments", limiter);
 
 // Rate limiting for employee routes
 app.use("/employee/login", limiter);
+app.use("/employee/create-user", limiter);
 app.use("/employee/stats", limiter);
 app.use("/employee/users", limiter);
 app.use("/employee/transactions", limiter);
@@ -599,144 +600,20 @@ app.get("/", (req, res) => res.send("Backend is running!"));
 
 
 
-// Register Route 
-app.post("/register", validate(registerSchema), async (req, res) => {
-  console.log('[Register] Received request');
+// Register Route - DISABLED (Only employees can create accounts)
+app.post("/register", async (req, res) => {
+  console.log('[Register] Self-registration attempt blocked');
   
-  // Manual CSRF validation
-  const csrfTokenFromHeader = req.headers['x-csrf-token'];
-  const csrfTokenFromCookie = req.cookies._csrf;
-  
-  console.log('[Register] CSRF Token from header:', csrfTokenFromHeader);
-  console.log('[Register] CSRF Token from cookie:', csrfTokenFromCookie);
-  
-  if (!csrfTokenFromHeader || !csrfTokenFromCookie || csrfTokenFromHeader !== csrfTokenFromCookie) {
-    console.log('[Register] CSRF validation failed');
-    
-    // Security logging for CSRF failure
-    logSecurityEvent(SecurityEvents.CSRF_VALIDATION_FAILED, {
-      route: '/register',
-      ip: req.ip,
-      hasHeader: !!csrfTokenFromHeader,
-      hasCookie: !!csrfTokenFromCookie
-    });
-    
-    return res.status(403).json({ message: 'Invalid CSRF token' });
-  }
-  
-  console.log('[Register] CSRF validation passed');
-  console.log('[Register] Headers:', req.headers);
-  console.log('[Register] Cookies:', req.cookies);
-
-
-  let { name, surname, idNumber, email, password } = req.body;
-
-  // Type checking - ensure all inputs are strings
-  if (typeof name !== 'string' || typeof surname !== 'string' || 
-      typeof idNumber !== 'string' || typeof email !== 'string' || 
-      typeof password !== 'string') {
-    
-    logSecurityEvent(SecurityEvents.INVALID_INPUT, {
-      route: '/register',
-      ip: req.ip,
-      reason: 'Invalid input type'
-    });
-    
-    return res.status(400).json({ message: "Invalid input format" });
-  }
-
-  // Length validation (prevent buffer overflow)
-  if (name.length > 50) return res.status(400).json({ message: "Name too long (max 50 characters)" });
-  if (surname.length > 50) return res.status(400).json({ message: "Surname too long (max 50 characters)" });
-  if (idNumber.length > 20) return res.status(400).json({ message: "ID number too long" });
-  if (email.length > 100) return res.status(400).json({ message: "Email too long (max 100 characters)" });
-  if (password.length > 128) return res.status(400).json({ message: "Password too long (max 128 characters)" });
-
-  // Sanitization
-  name = sanitizeHtml(name.trim());
-  surname = sanitizeHtml(surname.trim());
-  idNumber = idNumber.replace(/\D/g, "");
-  email = sanitizeHtml(email.trim().toLowerCase());
-  password = sanitizeHtml(password);
-
-  // Validation
-  if (!name || !surname || !idNumber || !email || !password) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
-
- 
-  if (!validateName(name)) {
-    return res.status(400).json({ message: "Invalid name format (letters only, max 50 characters)" });
-  }
-  
-  if (!validateName(surname)) {
-    return res.status(400).json({ message: "Invalid surname format (letters only, max 50 characters)" });
-  }
-  
-  if (!validateIDNumber(idNumber)) {
-    return res.status(400).json({ message: "Invalid ID Number (must be exactly 13 digits)" });
-  }
-  
-  if (!validateEmail(email)) {
-    return res.status(400).json({ message: "Invalid email format" });
-  }
-  
-  if (!validateInput(password, "password")) {
-    return res.status(400).json({ 
-      message: "Password must be at least 8 characters and contain uppercase, lowercase, number, and special character (@$!%*?&#)" 
-    });
-  }
-
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Generate unique account number
-    const accountNumber = generateAccountNumber();
-
-    const newUser = await User.create({
-      name,
-      surname,
-      idNumber,
-      accountNumber,
-      email,
-      password: hashedPassword
-    });
-
-    // Security logging for successful registration
-    logSecurityEvent(SecurityEvents.SESSION_CREATED, {
-      email: email,
-      accountNumber: accountNumber,
-      userId: newUser._id,
-      ip: req.ip,
-      action: 'User registered'
-    });
-
-    // Return account number to user
-  res.status(201).json({ 
-    message: "User registered successfully!", 
-    userId: newUser._id,
-    accountNumber: accountNumber  
+  logSecurityEvent(SecurityEvents.UNAUTHORIZED_ACCESS, {
+    route: '/register',
+    ip: req.ip,
+    reason: 'Self-registration disabled - customers must be created by employees'
   });
-} catch (err) {
-    if (err.code === 11000) {
-      // Security logging for duplicate registration attempt
-      logSecurityEvent(SecurityEvents.SUSPICIOUS_ACTIVITY, {
-        email: email,
-        ip: req.ip,
-        reason: 'Attempted duplicate registration'
-      });
-      
-      return res.status(400).json({ message: "Email already exists" });
-    }
-    
-    // Security logging for registration errors
-    securityLogger.error('Registration error', {
-      error: err.message,
-      ip: req.ip
-    });
-    
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
+  
+  return res.status(403).json({ 
+    message: "Self-registration is disabled. Please contact our support team to create an account.",
+    contactInfo: "Visit your nearest CAP International Bank branch or call 1-800-CAP-BANK"
+  });
 });
 
 
@@ -1131,6 +1008,148 @@ app.post("/employee/login", validate(employeeLoginSchema), bruteforce.prevent, a
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
+
+
+
+
+
+
+
+
+// CREATE USER ACCOUNT (Employee Only)
+app.post("/employee/create-user", employeeAuthMiddleware, validate(registerSchema), async (req, res) => {
+  console.log('[Create User] Employee creating new user account');
+  
+  let { name, surname, idNumber, email, password } = req.body;
+
+  // Type checking - ensure all inputs are strings
+  if (typeof name !== 'string' || typeof surname !== 'string' || 
+      typeof idNumber !== 'string' || typeof email !== 'string' || 
+      typeof password !== 'string') {
+    
+    logSecurityEvent(SecurityEvents.INVALID_INPUT, {
+      route: '/employee/create-user',
+      employeeId: req.employee._id,
+      ip: req.ip,
+      reason: 'Invalid input type'
+    });
+    
+    return res.status(400).json({ message: "Invalid input format" });
+  }
+
+  // Length validation (prevent buffer overflow)
+  if (name.length > 50) return res.status(400).json({ message: "Name too long (max 50 characters)" });
+  if (surname.length > 50) return res.status(400).json({ message: "Surname too long (max 50 characters)" });
+  if (idNumber.length > 20) return res.status(400).json({ message: "ID number too long" });
+  if (email.length > 100) return res.status(400).json({ message: "Email too long (max 100 characters)" });
+  if (password.length > 128) return res.status(400).json({ message: "Password too long (max 128 characters)" });
+
+  // Sanitization
+  name = sanitizeHtml(name.trim());
+  surname = sanitizeHtml(surname.trim());
+  idNumber = idNumber.replace(/\D/g, "");
+  email = sanitizeHtml(email.trim().toLowerCase());
+  password = sanitizeHtml(password);
+
+  // Validation
+  if (!name || !surname || !idNumber || !email || !password) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  if (!validateName(name)) {
+    return res.status(400).json({ message: "Invalid name format (letters only, max 50 characters)" });
+  }
+  
+  if (!validateName(surname)) {
+    return res.status(400).json({ message: "Invalid surname format (letters only, max 50 characters)" });
+  }
+  
+  if (!validateIDNumber(idNumber)) {
+    return res.status(400).json({ message: "Invalid ID Number (must be exactly 13 digits)" });
+  }
+  
+  if (!validateEmail(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+  
+  if (!validateInput(password, "password")) {
+    return res.status(400).json({ 
+      message: "Password must be at least 8 characters and contain uppercase, lowercase, number, and special character (@$!%*?&#)" 
+    });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Generate unique account number
+    const accountNumber = generateAccountNumber();
+
+    const newUser = await User.create({
+      name,
+      surname,
+      idNumber,
+      accountNumber,
+      email,
+      password: hashedPassword
+    });
+
+    // Security logging for employee-created user
+    logSecurityEvent(SecurityEvents.SESSION_CREATED, {
+      email: email,
+      accountNumber: accountNumber,
+      userId: newUser._id,
+      createdBy: req.employee._id,
+      createdByEmployeeId: req.employee.employeeId,
+      ip: req.ip,
+      action: 'User created by employee'
+    });
+
+    // Return user details (employee needs to give these to customer)
+    res.status(201).json({ 
+      message: "User account created successfully!", 
+      user: {
+        userId: newUser._id,
+        name: newUser.name,
+        surname: newUser.surname,
+        email: newUser.email,
+        accountNumber: accountNumber,
+        temporaryPassword: password, // Return the plain password so employee can give to customer
+        createdAt: newUser.createdAt
+      }
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      // Check which field caused the duplicate
+      const field = err.keyPattern.email ? 'Email' : 'Account number';
+      
+      logSecurityEvent(SecurityEvents.SUSPICIOUS_ACTIVITY, {
+        email: email,
+        employeeId: req.employee._id,
+        ip: req.ip,
+        reason: `Attempted duplicate user creation - ${field} already exists`
+      });
+      
+      return res.status(400).json({ message: `${field} already exists` });
+    }
+    
+    // Security logging for creation errors
+    securityLogger.error('User creation error', {
+      error: err.message,
+      employeeId: req.employee._id,
+      ip: req.ip
+    });
+    
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+
+
+
+
+
+
 
 
 // Get Employee Dashboard Stats

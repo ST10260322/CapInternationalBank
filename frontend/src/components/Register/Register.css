@@ -1,393 +1,258 @@
 .register-container {
   min-height: 100vh;
-  background-image: url('https://images.unsplash.com/photo-1601597111158-2fceff292cdc?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 20px;
+  justify-content: center;
+  padding: 40px 20px;
 }
 
-.register-card {
+.register-disabled-card {
+  background: rgba(30, 30, 30, 0.95);
+  border-radius: 20px;
+  padding: 60px 50px;
+  max-width: 800px;
   width: 100%;
-  max-width: 560px;
-  background-color: rgba(30, 30, 30, 0.85);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 50px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  animation: fadeInUp 0.6s ease;
 }
 
-.bank-icon {
-  margin-bottom: 15px;
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.register-subtitle {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.95rem;
-  text-align: center;
-  margin-bottom: 5px;
-  font-weight: 400;
-}
-
-.register-title {
-  color: #ffffff;
-  font-size: 1.8rem;
-  font-weight: 700;
+.lock-icon {
   text-align: center;
   margin-bottom: 30px;
 }
 
-.register-form {
-  width: 100%;
+.lock-icon svg {
+  color: #8B2222;
+  stroke-width: 2;
+  filter: drop-shadow(0 4px 12px rgba(139, 34, 34, 0.3));
+}
+
+.register-disabled-card h1 {
+  color: #ffffff;
+  font-size: 2.5rem;
+  text-align: center;
+  margin: 0 0 20px 0;
+  font-weight: 700;
+}
+
+.main-message {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
+  text-align: center;
+  line-height: 1.8;
+  margin: 0 0 50px 0;
+  padding: 0 20px;
+}
+
+.info-section {
+  margin: 50px 0;
+}
+
+.info-section h2 {
+  color: #ffffff;
+  font-size: 1.8rem;
+  text-align: center;
+  margin: 0 0 40px 0;
+  font-weight: 600;
+}
+
+.steps {
+  display: grid;
+  gap: 25px;
+}
+
+.step {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 25px;
+  background: rgba(40, 40, 40, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(139, 34, 34, 0.2);
+  transition: all 0.3s;
+}
+
+.step:hover {
+  background: rgba(50, 50, 50, 0.8);
+  border-color: rgba(139, 34, 34, 0.4);
+  transform: translateX(10px);
+}
+
+.step-number {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #8B2222, #6B1A1A);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(139, 34, 34, 0.4);
+}
+
+.step-content h3 {
+  color: #ffffff;
+  font-size: 1.2rem;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.step-content p {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.contact-section {
+  margin: 50px 0;
+  padding: 40px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contact-section h2 {
+  color: #ffffff;
+  font-size: 1.8rem;
+  text-align: center;
+  margin: 0 0 30px 0;
+  font-weight: 600;
+}
+
+.contact-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 20px;
 }
 
-.form-row {
+.contact-option {
   display: flex;
+  align-items: flex-start;
   gap: 15px;
-}
-
-.form-row .input-group {
-  flex: 1;
-}
-
-.input-group {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.input-label {
-  color: #ffffff;
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-.input-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.form-input {
-  width: 100%;
-  padding: 12px 40px 12px 16px;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  background-color: rgba(60, 60, 60, 0.8);
-  color: #ffffff;
-  transition: all 0.3s ease;
-  box-sizing: border-box;
-}
-
-.form-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.form-input:focus {
-  outline: none;
-  background-color: rgba(70, 70, 70, 0.9);
-  box-shadow: 0 0 0 2px rgba(100, 150, 255, 0.5);
-}
-
-.password-wrapper .form-input {
-  border: 2px solid rgba(100, 150, 255, 0.6);
-}
-
-.checkmark {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: #22c55e;
-  color: white;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.password-input {
-  padding-right: 16px;
-}
-
-.register-button {
-  width: 100%;
-  padding: 13px;
-  background-color: #8B2222;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.05rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  margin-top: 10px;
-}
-
-.register-button:hover {
-  background-color: #6B1A1A;
-}
-
-.login-link {
-  color: #ffffff;
-  text-align: center;
-  margin-top: 20px;
-  font-size: 0.95rem;
-}
-
-.login-link a {
-  color: #5B9BD5;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.login-link a:hover {
-  text-decoration: underline;
-}
-
-.message {
-  color: #ffffff;
-  text-align: center;
-  margin-top: 15px;
-  padding: 12px;
-  background-color: rgba(0, 0, 0, 0.4);
-  border-radius: 8px;
-  width: 100%;
-  font-size: 0.9rem;
-}
-
-/* Password Strength Meter Styles */
-.password-strength {
-  margin-top: 10px;
-  text-align: left;
-}
-
-.strength-bar-container {
-  width: 100%;
-  height: 6px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.strength-bar {
-  height: 100%;
-  transition: width 0.3s ease, background-color 0.3s ease;
-  border-radius: 3px;
-}
-
-.strength-label {
-  font-size: 13px;
-  margin: 5px 0;
-  font-weight: 500;
-  color: #ffffff;
-}
-
-.strength-feedback {
-  list-style: none;
-  padding: 0;
-  margin: 5px 0 0 0;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.strength-feedback li {
-  padding: 3px 0;
-  line-height: 1.4;
-}
-
-.strength-feedback li:before {
-  content: "• ";
-  color: #ef4444;
-  font-weight: bold;
-  margin-right: 5px;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .register-card {
-    padding: 35px 30px;
-  }
-
-  .form-row {
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .register-title {
-    font-size: 1.6rem;
-  }
-
-  .register-subtitle {
-    font-size: 0.9rem;
-  }
-
-  .form-input {
-    padding: 11px 40px 11px 14px;
-  }
-
-  .register-button {
-    padding: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .register-card {
-    padding: 30px 25px;
-  }
-
-  .bank-icon svg {
-    width: 50px;
-    height: 50px;
-  }
-
-  .message.success {
-    background-color: rgba(34, 197, 94, 0.2);
-    border: 1px solid rgba(34, 197, 94, 0.4);
-  }
-  
-  .message.error {
-    background-color: rgba(239, 68, 68, 0.2);
-    border: 1px solid rgba(239, 68, 68, 0.4);
-  }
-}
-
-/* Account Number Display Styles */
-.account-number-display {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 25px;
-  padding: 20px 0;
-}
-
-.success-icon {
-  width: 80px;
-  height: 80px;
-  background-color: #22c55e;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  color: white;
-  animation: scaleIn 0.5s ease;
-}
-
-@keyframes scaleIn {
-  0% {
-    transform: scale(0);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.success-title {
-  color: #ffffff;
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.account-number-box {
-  background: linear-gradient(135deg, rgba(139, 34, 34, 0.3) 0%, rgba(107, 26, 26, 0.3) 100%);
-  border: 2px solid rgba(139, 34, 34, 0.5);
-  border-radius: 16px;
-  padding: 30px 40px;
-  text-align: center;
-  width: 100%;
-  max-width: 400px;
-}
-
-.account-number-label {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.95rem;
-  margin-bottom: 10px;
-}
-
-.account-number-value {
-  color: #ffffff;
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  font-family: 'Courier New', monospace;
-  margin: 0;
-}
-
-.important-notice {
-  background-color: rgba(234, 179, 8, 0.15);
-  border: 2px solid rgba(234, 179, 8, 0.4);
-  border-radius: 12px;
   padding: 20px;
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
+  background: rgba(40, 40, 40, 0.6);
+  border-radius: 10px;
+  transition: all 0.3s;
 }
 
-.important-notice p {
-  color: #fbbf24;
-  font-size: 0.9rem;
-  margin: 5px 0;
+.contact-option:hover {
+  background: rgba(50, 50, 50, 0.8);
+  transform: translateY(-5px);
 }
 
-.important-notice strong {
-  font-weight: 700;
+.contact-option svg {
+  flex-shrink: 0;
+  color: #8B2222;
 }
 
-.redirect-message {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.9rem;
-  font-style: italic;
-  margin-top: 10px;
-}
-
-.goto-login-button {
-  background-color: #8B2222;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 14px 40px;
-  font-size: 1.05rem;
+.contact-option h3 {
+  color: #ffffff;
+  font-size: 1rem;
+  margin: 0 0 5px 0;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 10px;
 }
 
-.goto-login-button:hover {
-  background-color: #6B1A1A;
-  transform: translateY(-2px);
+.contact-option p {
+  color: #8B2222;
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.1rem;
 }
 
-.message.success {
-  background-color: rgba(34, 197, 94, 0.2);
-  border: 1px solid rgba(34, 197, 94, 0.4);
+.contact-option small {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+}
+
+.security-badge {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 10px;
+  margin: 40px 0;
+}
+
+.security-badge svg {
+  flex-shrink: 0;
   color: #22c55e;
 }
 
-.message.error {
-  background-color: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #ef4444;
+.security-badge p {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.actions {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.back-to-login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 30px;
+  background: linear-gradient(135deg, #8B2222, #6B1A1A);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.back-to-login-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(139, 34, 34, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .register-disabled-card {
+    padding: 40px 30px;
+  }
+
+  .register-disabled-card h1 {
+    font-size: 2rem;
+  }
+
+  .main-message {
+    font-size: 1rem;
+  }
+
+  .info-section h2,
+  .contact-section h2 {
+    font-size: 1.5rem;
+  }
+
+  .step {
+    padding: 20px;
+  }
+
+  .step:hover {
+    transform: translateX(5px);
+  }
+
+  .contact-options {
+    grid-template-columns: 1fr;
+  }
 }

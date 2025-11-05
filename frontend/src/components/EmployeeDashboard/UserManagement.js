@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../../api";
+import CreateUserAccount from "./CreateUserAccount";
 import "./UserManagement.css";
 
 function UserManagement() {
@@ -10,6 +11,7 @@ function UserManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const [showCreateUser, setShowCreateUser] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -36,7 +38,7 @@ function UserManagement() {
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page on new search
+    setCurrentPage(1);
   };
 
   const handleViewUser = async (userId) => {
@@ -47,6 +49,11 @@ function UserManagement() {
     } catch (err) {
       console.error("Error fetching user details:", err);
     }
+  };
+
+  const handleUserCreated = (newUser) => {
+    // Refresh user list after creating a new user
+    fetchUsers();
   };
 
   const formatDate = (dateString) => {
@@ -75,7 +82,7 @@ function UserManagement() {
 
   return (
     <div className="user-management">
-      {/* Search and Filters */}
+      {/* Search and Actions Header */}
       <div className="management-header">
         <div className="search-bar">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -88,12 +95,20 @@ function UserManagement() {
             onChange={handleSearch}
           />
         </div>
-        <button className="refresh-btn" onClick={fetchUsers}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"/>
-          </svg>
-          Refresh
-        </button>
+        <div className="header-actions">
+          <button className="create-user-btn" onClick={() => setShowCreateUser(true)}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/>
+            </svg>
+            Create New User
+          </button>
+          <button className="refresh-btn" onClick={fetchUsers}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Users Table */}
@@ -103,6 +118,7 @@ function UserManagement() {
             <tr>
               <th>Name</th>
               <th>Email</th>
+              <th>Account Number</th>
               <th>ID Number</th>
               <th>Registration Date</th>
               <th>Actions</th>
@@ -121,6 +137,7 @@ function UserManagement() {
                     </div>
                   </td>
                   <td>{user.email}</td>
+                  <td className="account-number-cell">{user.accountNumber}</td>
                   <td>{user.idNumber}</td>
                   <td>{formatDate(user.createdAt)}</td>
                   <td>
@@ -135,8 +152,8 @@ function UserManagement() {
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="no-data">
-                  No users found
+                <td colSpan="6" className="no-data">
+                  {searchTerm ? "No users found matching your search" : "No users found"}
                 </td>
               </tr>
             )}
@@ -164,6 +181,18 @@ function UserManagement() {
           >
             Next
           </button>
+        </div>
+      )}
+
+      {/* Create User Modal */}
+      {showCreateUser && (
+        <div className="modal-overlay" onClick={() => setShowCreateUser(false)}>
+          <div className="modal-content-large" onClick={(e) => e.stopPropagation()}>
+            <CreateUserAccount 
+              onClose={() => setShowCreateUser(false)}
+              onUserCreated={handleUserCreated}
+            />
+          </div>
         </div>
       )}
 
@@ -195,6 +224,12 @@ function UserManagement() {
                   <div className="detail-item">
                     <span className="detail-label">Email</span>
                     <span className="detail-value">{selectedUser.user.email}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Account Number</span>
+                    <span className="detail-value account-number-display">
+                      {selectedUser.user.accountNumber}
+                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">ID Number</span>

@@ -1,260 +1,116 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { Link } from "react-router-dom";
 import "./Register.css";
-import api from "../../api";
-import { calculatePasswordStrength } from "../../utils/passwordStrength";
 
 function Register() {
-  const [name, setName] = useState("");
-  const [surname, setSurname] = useState("");
-  const [idNumber, setIdNumber] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [country, setCountry] = useState("");
-  const [passwordStrength, setPasswordStrength] = useState(null);
-  const [message, setMessage] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
-  const [showAccountNumber, setShowAccountNumber] = useState(false);
-  
-  // Validation states
-  const [nameValid, setNameValid] = useState(false);
-  const [surnameValid, setSurnameValid] = useState(false);
-  const [idValid, setIdValid] = useState(false);
-  const [emailValid, setEmailValid] = useState(false);
-  const [passwordValid, setPasswordValid] = useState(false);
-  const [countryValid, setCountryValid] = useState(false);
-  
-  const navigate = useNavigate();
-
-  const handlePasswordChange = (e) => {
-    const newPassword = e.target.value;
-    setPassword(newPassword);
-    setPasswordStrength(calculatePasswordStrength(newPassword));
-    setPasswordValid(newPassword.length >= 8);
-  };
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setMessage("");
-    
-    try {
-      const res = await api.post("/register", {
-        name,
-        surname,
-        idNumber,
-        email,
-        password
-      });
-      
-      // Show account number to user
-      if (res.data.accountNumber) {
-        setAccountNumber(res.data.accountNumber);
-        setShowAccountNumber(true);
-        setMessage(`Registration successful! Your account number is: ${res.data.accountNumber}`);
-        
-        // Navigate to login after 5 seconds
-        setTimeout(() => {
-          navigate("/");
-        }, 5000);
-      } else {
-        setMessage(res.data.message);
-        setTimeout(() => {
-          navigate("/");
-        }, 1500);
-      }
-    } catch (err) {
-      console.error("Registration error:", err);
-      setMessage(err.response?.data?.message || "Error registering");
-    }
-  };
-
   return (
     <div className="register-container">
-      <div className="register-card">
-        <div className="bank-icon">
-          <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M30 5L5 20H55L30 5Z" fill="white"/>
-            <rect x="10" y="25" width="8" height="25" fill="white"/>
-            <rect x="22" y="25" width="8" height="25" fill="white"/>
-            <rect x="34" y="25" width="8" height="25" fill="white"/>
-            <rect x="46" y="25" width="8" height="25" fill="white"/>
-            <rect x="5" y="50" width="50" height="5" fill="white"/>
+      <div className="register-disabled-card">
+        <div className="lock-icon">
+          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0110 0v4"/>
           </svg>
         </div>
+
+        <h1>Self-Registration Disabled</h1>
         
-        <p className="register-subtitle">Join the world's leading bank</p>
-        <h1 className="register-title">CAP International Bank</h1>
-        
-        {!showAccountNumber ? (
-          <form onSubmit={handleRegister} className="register-form">
-            <div className="form-row">
-              <div className="input-group">
-                <label className="input-label">Name</label>
-                <div className="input-wrapper">
-                  <input
-                    type="text"
-                    placeholder="e.g. John"
-                    value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      setNameValid(e.target.value.length > 0 && /^[A-Za-z\s]+$/.test(e.target.value));
-                    }}
-                    required
-                    className="form-input"
-                    maxLength="50"
-                  />
-                  {nameValid && <span className="checkmark">✓</span>}
-                </div>
-              </div>
-              
-              <div className="input-group">
-                <label className="input-label">Surname</label>
-                <div className="input-wrapper">
-                  <input
-                    type="text"
-                    placeholder="e.g. Doe"
-                    value={surname}
-                    onChange={(e) => {
-                      setSurname(e.target.value);
-                      setSurnameValid(e.target.value.length > 0 && /^[A-Za-z\s]+$/.test(e.target.value));
-                    }}
-                    required
-                    className="form-input"
-                    maxLength="50"
-                  />
-                  {surnameValid && <span className="checkmark">✓</span>}
-                </div>
+        <p className="main-message">
+          For your security and to comply with banking regulations, 
+          customer accounts can only be created by our authorized bank employees.
+        </p>
+
+        <div className="info-section">
+          <h2>How to Open an Account</h2>
+          <div className="steps">
+            <div className="step">
+              <div className="step-number">1</div>
+              <div className="step-content">
+                <h3>Visit a Branch</h3>
+                <p>Visit your nearest CAP International Bank branch with your ID document</p>
               </div>
             </div>
             
-            <div className="input-group">
-              <label className="input-label">ID Number</label>
-              <div className="input-wrapper">
-                <input
-                  type="text"
-                  placeholder="0402030165086"
-                  value={idNumber}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
-                    setIdNumber(value);
-                    setIdValid(value.length === 13);
-                  }}
-                  required
-                  className="form-input"
-                  maxLength="13"
-                />
-                {idValid && <span className="checkmark">✓</span>}
+            <div className="step">
+              <div className="step-number">2</div>
+              <div className="step-content">
+                <h3>Speak to a Representative</h3>
+                <p>Our banking representative will assist you with account creation</p>
               </div>
             </div>
             
-            <div className="input-group">
-              <label className="input-label">Email</label>
-              <div className="input-wrapper">
-                <input
-                  type="email"
-                  placeholder="capinternationalbank@gmail.com"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setEmailValid(e.target.value.includes('@') && e.target.value.includes('.'));
-                  }}
-                  required
-                  className="form-input"
-                  maxLength="100"
-                />
-                {emailValid && <span className="checkmark">✓</span>}
+            <div className="step">
+              <div className="step-number">3</div>
+              <div className="step-content">
+                <h3>Receive Your Credentials</h3>
+                <p>You'll receive your account number and temporary password</p>
               </div>
             </div>
             
-            <div className="input-group">
-              <label className="input-label">Password</label>
-              <div className="input-wrapper password-wrapper">
-                <input
-                  type="password"
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={handlePasswordChange}
-                  required
-                  className="form-input password-input"
-                  maxLength="128"
-                />
-                {passwordValid && <span className="checkmark">✓</span>}
-              </div>
-              
-              {passwordStrength && password && (
-                <div className="password-strength">
-                  <div className="strength-bar-container">
-                    <div 
-                      className="strength-bar" 
-                      style={{ 
-                        width: `${passwordStrength.percentage}%`,
-                        backgroundColor: passwordStrength.color 
-                      }}
-                    ></div>
-                  </div>
-                  <p className="strength-label" style={{ color: passwordStrength.color }}>
-                    Password Strength: <strong>{passwordStrength.label}</strong>
-                  </p>
-                  {passwordStrength.feedback.length > 0 && (
-                    <ul className="strength-feedback">
-                      {passwordStrength.feedback.map((item, index) => (
-                        <li key={index}>{item}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            <div className="input-group">
-              <label className="input-label">Country of Residence</label>
-              <div className="input-wrapper">
-                <input
-                  type="text"
-                  placeholder="South Africa"
-                  value={country}
-                  onChange={(e) => {
-                    setCountry(e.target.value);
-                    setCountryValid(e.target.value.length > 0);
-                  }}
-                  required
-                  className="form-input"
-                  style={{ width: "250px"}}
-                  maxLength="50"
-                />
-                {countryValid && <span className="checkmark">✓</span>}
+            <div className="step">
+              <div className="step-number">4</div>
+              <div className="step-content">
+                <h3>Login & Start Banking</h3>
+                <p>Use your credentials to access the customer portal immediately</p>
               </div>
             </div>
-            
-            <button type="submit" className="register-button">Sign Up</button>
-          </form>
-        ) : (
-          <div className="account-number-display">
-            <div className="success-icon">✓</div>
-            <h2 className="success-title">Registration Successful!</h2>
-            <div className="account-number-box">
-              <p className="account-number-label">Your Account Number:</p>
-              <p className="account-number-value">{accountNumber}</p>
-            </div>
-            <div className="important-notice">
-              <p>⚠️ <strong>IMPORTANT:</strong> Please save this account number!</p>
-              <p>You will need it to log in to your account.</p>
-            </div>
-            <p className="redirect-message">Redirecting to login in 5 seconds...</p>
-            <button 
-              className="goto-login-button" 
-              onClick={() => navigate("/")}
-            >
-              Go to Login Now
-            </button>
           </div>
-        )}
-        
-        {message && !showAccountNumber && (
-          <p className={`message ${message.includes('Error') || message.includes('error') ? 'error' : 'success'}`}>
-            {message}
-          </p>
-        )}
+        </div>
+
+        <div className="contact-section">
+          <h2>Need Assistance?</h2>
+          <div className="contact-options">
+            <div className="contact-option">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+              </svg>
+              <div>
+                <h3>Call Us</h3>
+                <p>1-800-CAP-BANK</p>
+                <small>(1-800-227-2265)</small>
+              </div>
+            </div>
+
+            <div className="contact-option">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+              </svg>
+              <div>
+                <h3>Email Us</h3>
+                <p>support@capbank.com</p>
+                <small>24/7 Support</small>
+              </div>
+            </div>
+
+            <div className="contact-option">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <div>
+                <h3>Find a Branch</h3>
+                <p>Over 500 locations</p>
+                <small>Nationwide</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="security-badge">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+          </svg>
+          <p>Your security is our priority. All accounts are created with strict verification protocols.</p>
+        </div>
+
+        <div className="actions">
+          <Link to="/" className="back-to-login-btn">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/>
+            </svg>
+            Back to Login
+          </Link>
+        </div>
       </div>
     </div>
   );
