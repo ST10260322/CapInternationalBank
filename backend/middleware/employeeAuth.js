@@ -1,8 +1,7 @@
 import User from "../models/User.js";
 
-/**
- * Middleware to verify user is authenticated
- */
+
+// Middleware to verify user is authenticated
 export const authMiddleware = (req, res, next) => {
   if (!req.session.userId) {
     return res.status(401).json({ message: "Unauthorized: Please log in first" });
@@ -10,9 +9,8 @@ export const authMiddleware = (req, res, next) => {
   next();
 };
 
-/**
- * Middleware to verify user is an employee
- */
+
+ //Middleware to verify user is an employee
 export const employeeAuthMiddleware = async (req, res, next) => {
   try {
     if (!req.session.userId) {

@@ -6,7 +6,7 @@ function DashboardCharts({ stats }) {
     // Handle the stats structure from Overview
     const transactionStats = stats.transactions || stats;
 
-    // ✅ PIE CHART DATA (unchanged)
+    // PIE CHART DATA 
     const statusData = [
       { 
         name: 'Pending', 
@@ -25,7 +25,7 @@ function DashboardCharts({ stats }) {
       }
     ];
 
-    // ✅ STATIC FALLBACK LOGIC FOR BAR CHART
+    // STATIC FALLBACK LOGIC FOR BAR CHART
     const hasRealAmounts =
       (transactionStats.pendingAmount || 0) +
       (transactionStats.approvedAmount || 0) +
@@ -38,7 +38,7 @@ function DashboardCharts({ stats }) {
           { status: 'Rejected', amount: transactionStats.rejectedAmount || 0, color: '#ef4444' },
         ]
       : [
-          // ✅ Static fallback values
+          // Static fallback values
           { status: 'Pending', amount: 1000, color: '#fbbf24' },
           { status: 'Approved', amount: 5000, color: '#22c55e' },
           { status: 'Rejected', amount: 1500, color: '#ef4444' },

@@ -30,7 +30,7 @@ const consoleFormat = winston.format.combine(
 // Create logs directory if it doesn't exist
 const logsDir = path.join(__dirname, '../logs');
 
-// Security events logger (separate file)
+// Security events logger 
 const securityLogger = winston.createLogger({
   level: 'info',
   format: logFormat,

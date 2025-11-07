@@ -11,7 +11,7 @@ const paymentSchema = new mongoose.Schema({
   reference: { type: String },
   swiftCode: { type: String },
   
-  // NEW FIELDS FOR EMPLOYEE APPROVAL SYSTEM
+  
   status: { 
     type: String, 
     enum: ['pending', 'approved', 'rejected'], 
