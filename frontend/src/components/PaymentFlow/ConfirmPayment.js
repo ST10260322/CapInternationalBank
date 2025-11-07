@@ -8,20 +8,29 @@ function ConfirmPayment({ prevStep, data }) {
 
   const handleConfirm = async () => {
     try {
+      // Match the field names to what the backend expects
       await api.post("/payments", {
         recipientName: data.recipientName,
         bank: data.bank,
         accountNumber: data.accountNumber,
-        recipientEmail: data.email,
+        recipientEmail: data.email,  // This is correct
         currency: data.currency,
-        amount: data.amount,
-        reference: data.reference,
+        amount: parseFloat(data.amount), // Ensure it's a number
+        reference: data.reference || "",  // Handle empty reference
         swiftCode: data.swiftCode
       });
+      
       alert("Payment confirmed and saved!");
       navigate("/home");
     } catch (err) {
-      alert(err.response?.data?.message || "Error saving payment");
+      console.error("Payment error:", err);
+      console.error("Error response:", err.response?.data);
+      
+      // Show more detailed error message
+      const errorMsg = err.response?.data?.message || 
+                      err.response?.data?.error || 
+                      "Error saving payment";
+      alert(errorMsg);
     }
   };
 
@@ -49,54 +58,62 @@ function ConfirmPayment({ prevStep, data }) {
             <span className="detail-label">Recipient Name</span>
             <div className="detail-value">{data.recipientName}</div>
           </div>
-
+          
           <div className="detail-item">
             <span className="detail-label">Currency</span>
             <div className="detail-value">{data.currency}</div>
           </div>
-
+          
           <div className="detail-item">
             <span className="detail-label">Recipient Bank</span>
             <div className="detail-value">{data.bank}</div>
           </div>
-
+          
           <div className="detail-item">
             <span className="detail-label">Amount</span>
-            <div className="detail-value">R {parseFloat(data.amount).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="detail-value">
+              {data.currency} {parseFloat(data.amount).toLocaleString('en-ZA', { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+              })}
+            </div>
           </div>
-
+          
           <div className="detail-item">
             <span className="detail-label">Account Number</span>
             <div className="detail-value">{data.accountNumber}</div>
           </div>
-
+          
           <div className="detail-item">
             <span className="detail-label">Reference</span>
             <div className="detail-value">{data.reference || 'N/A'}</div>
           </div>
-
+          
           <div className="detail-item">
             <span className="detail-label">Recipient Email</span>
             <div className="detail-value">{data.email}</div>
           </div>
-
+          
           <div className="detail-item">
             <span className="detail-label">SWIFT Code</span>
-            <div className="detail-value swift-code">••••••••••</div>
+            <div className="detail-value swift-code">{data.swiftCode}</div>
           </div>
         </div>
 
         <div className="button-container">
+          <button className="back-button" onClick={prevStep}>
+            Back
+          </button>
           <button className="start-over-button" onClick={handleStartOver}>
             Start Over
           </button>
           <button className="send-button" onClick={handleConfirm}>
-            Send
+            Send Payment
           </button>
         </div>
 
         <div className="footer-text">
-          Protected by Rate Limiting
+          Protected by Rate Limiting & Encryption
         </div>
       </div>
     </div>

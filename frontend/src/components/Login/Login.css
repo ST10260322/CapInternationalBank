@@ -11,7 +11,7 @@
   position: relative;
 }
 
-/* Employee Access Button - NEW */
+/* Employee Access Button */
 .employee-access-btn {
   position: absolute;
   top: 30px;
@@ -56,6 +56,7 @@
   padding: 50px 60px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(10px);
+  box-sizing: border-box;
 }
 
 .bank-icon {
@@ -113,6 +114,7 @@
   background-color: rgba(60, 60, 60, 0.8);
   color: #ffffff;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .form-input::placeholder {
@@ -137,6 +139,7 @@
   cursor: pointer;
   transition: background-color 0.3s ease;
   margin-top: 10px;
+  box-sizing: border-box;
 }
 
 .login-button:hover {
@@ -169,6 +172,7 @@
   border-radius: 8px;
   width: 100%;
   font-size: 0.9rem;
+  box-sizing: border-box;
 }
 
 /* Responsive design */

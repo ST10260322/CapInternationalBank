@@ -5,6 +5,7 @@ import "./EmployeeDashboard.css";
 import Overview from "./Overview";
 import UserManagement from "./UserManagement";
 import TransactionManagement from "./TransactionManagement";
+import DashboardCharts from './DashboardCharts';
 
 function EmployeeDashboard() {
   const [activeTab, setActiveTab] = useState("overview");

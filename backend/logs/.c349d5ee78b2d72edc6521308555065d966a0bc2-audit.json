@@ -14,6 +14,16 @@
             "date": 1762335492274,
             "name": "/Users/phenyonel/customer-portal/backend/logs/security-2025-11-05.log",
             "hash": "20a050aff7fd7b50f05fea41e6fb794e6ef0fc3dcc7a0b6f849de1554248d21e"
+        },
+        {
+            "date": 1762447709678,
+            "name": "/Users/phenyonel/customer-portal/backend/logs/security-2025-11-06.log",
+            "hash": "c71d16bd9b6ef8fadf39a0aa9470cb7675b3f221f854275b4cc1655a3005eb5d"
+        },
+        {
+            "date": 1762500703595,
+            "name": "/Users/phenyonel/customer-portal/backend/logs/security-2025-11-07.log",
+            "hash": "53071cdd4e5bb6a01af198ec0e3718ed0038c095523249df3ce1d9e2910b380b"
         }
     ],
     "hashType": "sha256"

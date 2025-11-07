@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../../api";
+import toast from 'react-hot-toast';
 import "./TransactionManagement.css";
 
 function TransactionManagement() {
@@ -35,6 +36,7 @@ function TransactionManagement() {
       setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error("Error fetching transactions:", err);
+      toast.error("Failed to fetch transactions");
     } finally {
       setLoading(false);
     }
@@ -48,6 +50,7 @@ function TransactionManagement() {
       setComment("");
     } catch (err) {
       console.error("Error fetching transaction details:", err);
+      toast.error("Failed to load transaction details");
     }
   };
 
@@ -55,15 +58,27 @@ function TransactionManagement() {
     if (!selectedTransaction) return;
     
     setActionLoading(true);
+    const toastId = toast.loading('Processing transaction approval...');
+    
     try {
       await api.post(`/employee/transactions/${selectedTransaction._id}/approve`, {
-        comment: comment.trim()
+        comment: comment || undefined  // Only send comment if provided
       });
-      alert("Transaction approved successfully!");
+      
+      toast.success('✅ Transaction approved successfully!', {
+        id: toastId,
+      });
+      
+      // Close modal and refresh
       setShowTransactionDetails(false);
-      fetchTransactions(); // Refresh list
+      setSelectedTransaction(null);
+      setComment("");
+      fetchTransactions();
     } catch (err) {
-      alert(err.response?.data?.message || "Error approving transaction");
+      console.error("Approval error:", err);
+      toast.error(err.response?.data?.message || '❌ Failed to approve transaction', {
+        id: toastId,
+      });
     } finally {
       setActionLoading(false);
     }
@@ -72,21 +87,34 @@ function TransactionManagement() {
   const handleReject = async () => {
     if (!selectedTransaction) return;
     
-    if (!comment.trim()) {
-      alert("Please provide a reason for rejection");
+    // Validate comment is required for rejection
+    if (!comment || comment.trim() === "") {
+      toast.error("Comment is required for rejecting a transaction");
       return;
     }
     
     setActionLoading(true);
+    const toastId = toast.loading('Processing transaction rejection...');
+    
     try {
       await api.post(`/employee/transactions/${selectedTransaction._id}/reject`, {
-        comment: comment.trim()
+        comment: comment
       });
-      alert("Transaction rejected successfully!");
+      
+      toast.success('✅ Transaction rejected successfully!', {
+        id: toastId,
+      });
+      
+      // Close modal and refresh
       setShowTransactionDetails(false);
-      fetchTransactions(); // Refresh list
+      setSelectedTransaction(null);
+      setComment("");
+      fetchTransactions();
     } catch (err) {
-      alert(err.response?.data?.message || "Error rejecting transaction");
+      console.error("Rejection error:", err);
+      toast.error(err.response?.data?.message || '❌ Failed to reject transaction', {
+        id: toastId,
+      });
     } finally {
       setActionLoading(false);
     }
@@ -412,7 +440,7 @@ function TransactionManagement() {
                 <div className="action-section">
                   <h3>Review Action</h3>
                   <div className="comment-box">
-                    <label>Comment {selectedTransaction.status === 'pending' && <span className="optional">(optional for approval, required for rejection)</span>}</label>
+                    <label>Comment <span className="optional">(optional for approval, required for rejection)</span></label>
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
@@ -431,7 +459,7 @@ function TransactionManagement() {
                     <button
                       className="reject-btn"
                       onClick={handleReject}
-                      disabled={actionLoading}
+                      disabled={actionLoading || !comment.trim()}
                     >
                       {actionLoading ? "Processing..." : "✕ Reject Transaction"}
                     </button>

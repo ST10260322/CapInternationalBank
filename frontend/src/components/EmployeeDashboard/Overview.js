@@ -1,5 +1,6 @@
 import React from "react";
 import "./Overview.css";
+import DashboardCharts from './DashboardCharts';
 
 function Overview({ stats }) {
   if (!stats) {
@@ -87,6 +88,9 @@ function Overview({ stats }) {
           </div>
         </div>
       </div>
+
+      {/*DASHBOARD CHARTS*/}
+      <DashboardCharts stats={stats} />
 
       {/* Transaction Summary */}
       <div className="summary-section">

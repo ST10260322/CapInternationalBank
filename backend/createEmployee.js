@@ -9,7 +9,7 @@ async function createEmployee() {
   try {
     console.log("🔧 Creating employee account...\n");
 
-    // Employee details - CUSTOMIZE THESE
+    // Employee details
     const employeeData = {
       name: "Lionel",
       surname: "Messi",

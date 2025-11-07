@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import api from "../../api";
+import toast from 'react-hot-toast';
 import "./CreateUserAccount.css";
 
 function CreateUserAccount({ onClose, onUserCreated }) {
@@ -87,12 +88,23 @@ function CreateUserAccount({ onClose, onUserCreated }) {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+  
+    const toastId = toast.loading('Creating user account...');
+  
     try {
       const response = await api.post("/employee/create-user", formData);
+      
+      toast.success('🎉 User account created successfully!', {
+        id: toastId,
+        duration: 5000,
+      });
+      
       setCreatedUser(response.data.user);
       if (onUserCreated) onUserCreated(response.data.user);
     } catch (err) {
+      toast.error(err.response?.data?.message || "❌ Error creating user account", {
+        id: toastId,
+      });
       setError(err.response?.data?.message || "Error creating user account");
     } finally {
       setLoading(false);
@@ -101,7 +113,9 @@ function CreateUserAccount({ onClose, onUserCreated }) {
 
   const copyToClipboard = (text, field) => {
     navigator.clipboard.writeText(text);
-    alert(`${field} copied to clipboard!`);
+    toast.success(`📋 ${field} copied to clipboard!`, {
+      duration: 2000,
+    });
   };
 
   const printCredentials = () => {
